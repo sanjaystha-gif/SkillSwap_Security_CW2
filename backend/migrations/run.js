@@ -2,8 +2,11 @@ import fs from 'fs';
 import path from 'path';
 import pool from '../src/config/database.js';
 import dotenv from 'dotenv';
+import pino from 'pino';
 
 dotenv.config();
+
+const logger = pino({ level: process.env.LOG_LEVEL || 'info' });
 
 async function runMigrations() {
   try {
@@ -16,14 +19,14 @@ async function runMigrations() {
       const filePath = path.join(migrationsDir, file);
       const sql = fs.readFileSync(filePath, 'utf-8');
 
-      console.log(`Running migration: ${file}`);
+      logger.info({ file }, 'running migration');
       await pool.query(sql);
     }
 
-    console.log('✓ All migrations completed successfully');
+    logger.info('All migrations completed successfully');
     process.exit(0);
   } catch (error) {
-    console.error('✗ Migration failed:', error);
+    logger.error({ error }, 'migration failed');
     process.exit(1);
   }
 }

@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import pinoHttp from 'pino-http';
+import pino from 'pino';
 import dotenv from 'dotenv';
 import authRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
@@ -28,7 +29,8 @@ app.use(
 );
 
 // Logging
-app.use(pinoHttp());
+const logger = pino({ level: process.env.LOG_LEVEL || 'info' });
+app.use(pinoHttp({ logger }));
 
 // Body parsing
 app.use(express.json({ limit: '10kb' }));
@@ -71,11 +73,11 @@ app.use((err, req, res, next) => {
   }
 
   // Unexpected errors: log and return a generic envelope
-  console.error('Unexpected error:', err);
+  logger.error({ err }, 'Unexpected error');
   const internal = new InternalError(err);
   return res.status(internal.status).json(internal.toJSON());
 });
 
 app.listen(PORT, () => {
-  console.log(`✓ SkillSwap API listening on port ${PORT}`);
+  logger.info({ port: PORT }, 'SkillSwap API listening');
 });

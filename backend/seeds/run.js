@@ -2,8 +2,11 @@ import fs from 'fs';
 import path from 'path';
 import pool from '../src/config/database.js';
 import dotenv from 'dotenv';
+import pino from 'pino';
 
 dotenv.config();
+
+const logger = pino({ level: process.env.LOG_LEVEL || 'info' });
 
 async function runSeeds() {
   try {
@@ -16,14 +19,14 @@ async function runSeeds() {
       const filePath = path.join(seedsDir, file);
       const sql = fs.readFileSync(filePath, 'utf-8');
 
-      console.log(`Running seed: ${file}`);
+      logger.info({ file }, 'running seed');
       await pool.query(sql);
     }
 
-    console.log('✓ All seeds completed successfully');
+    logger.info('All seeds completed successfully');
     process.exit(0);
   } catch (error) {
-    console.error('✗ Seed failed:', error);
+    logger.error({ error }, 'seed failed');
     process.exit(1);
   }
 }
