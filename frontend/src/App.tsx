@@ -13,6 +13,7 @@ import CreateSkill from './pages/CreateSkill';
 import InitiateSwap from './pages/InitiateSwap';
 import Swaps from './pages/Swaps';
 import Credits from './pages/Credits';
+import AdminDashboard from './pages/AdminDashboard';
 import Login from './pages/Login';
 import Register from './pages/Register';
 
@@ -79,6 +80,14 @@ function App(): JSX.Element {
             element={
               <ProtectedRoute>
                 <Credits />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute>
+                <AdminDashboard />
               </ProtectedRoute>
             }
           />

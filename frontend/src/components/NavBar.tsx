@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export default function NavBar(): JSX.Element {
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, logout, user } = useAuth();
 
   return (
     <header className="bg-teal-950 text-white shadow-sm">
@@ -29,6 +29,11 @@ export default function NavBar(): JSX.Element {
               <Link to="/credits" className="transition hover:text-cyan-200">
                 Credits
               </Link>
+              {user?.role === 'admin' && (
+                <Link to="/admin" className="transition hover:text-cyan-200">
+                  Admin
+                </Link>
+              )}
               <Link to="/profile" className="transition hover:text-cyan-200">
                 Profile
               </Link>
