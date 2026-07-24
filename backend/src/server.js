@@ -63,8 +63,6 @@ app.use('/api/v1/swaps', swapsRoutes);
 app.use('/api/v1/credits', creditsRoutes);
 app.use('/api/v1/admin', adminRoutes);
 
-// TODO: mount other route modules here (users, swaps, credits, moderation, admin)
-
 // Error handling middleware - format AppError instances to the standard envelope
 app.use((err, req, res, next) => {
   // If it's an AppError, send its JSON structure
