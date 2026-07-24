@@ -1,16 +1,44 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { fetchSkillList } from '../usecases/skillsUseCases';
 import type { Skill } from '../services/skillsService';
 
 export default function Skills(): JSX.Element {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('');
+
   const { data, isLoading, isError, error } = useQuery<Skill[]>({
     queryKey: ['skills'],
     queryFn: fetchSkillList,
   });
 
   const skillItems = useMemo(() => data ?? [], [data]);
+
+  // Extract unique categories
+  const categories = useMemo(() => {
+    const cats = new Set<string>();
+    skillItems.forEach((skill) => {
+      if (skill.category) {
+        cats.add(skill.category);
+      }
+    });
+    return Array.from(cats).sort();
+  }, [skillItems]);
+
+  // Filter skills based on search and category
+  const filteredSkills = useMemo(() => {
+    return skillItems.filter((skill) => {
+      const matchesSearch =
+        searchTerm === '' ||
+        skill.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        skill.description.toLowerCase().includes(searchTerm.toLowerCase());
+
+      const matchesCategory = selectedCategory === '' || skill.category === selectedCategory;
+
+      return matchesSearch && matchesCategory;
+    });
+  }, [skillItems, searchTerm, selectedCategory]);
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
@@ -26,6 +54,68 @@ export default function Skills(): JSX.Element {
       </section>
 
       <section className="mt-8 space-y-4">
+        {/* Search and Filters */}
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="search" className="block text-sm font-semibold text-slate-950">
+                Search skills
+              </label>
+              <input
+                id="search"
+                type="text"
+                placeholder="Search by title or description..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-950 placeholder-slate-400 focus:border-teal-950 focus:outline-none"
+              />
+            </div>
+
+            {categories.length > 0 && (
+              <div>
+                <label htmlFor="category" className="block text-sm font-semibold text-slate-950">
+                  Filter by category
+                </label>
+                <select
+                  id="category"
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-950 focus:border-teal-950 focus:outline-none"
+                >
+                  <option value="">All categories</option>
+                  {categories.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {(searchTerm || selectedCategory) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchTerm('');
+                  setSelectedCategory('');
+                }}
+                className="text-sm font-semibold text-teal-950 transition hover:text-teal-700"
+              >
+                Clear filters
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Results Summary */}
+        {!isLoading && !isError && (
+          <div className="text-sm text-slate-600">
+            Showing {filteredSkills.length} of {skillItems.length} skill{skillItems.length === 1 ? '' : 's'}
+            {searchTerm && ` matching "${searchTerm}"`}
+            {selectedCategory && ` in "${selectedCategory}"`}
+          </div>
+        )}
+
         {isLoading && (
           <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm text-slate-700">
             Loading skills...
@@ -38,14 +128,14 @@ export default function Skills(): JSX.Element {
           </div>
         )}
 
-        {skillItems.length === 0 && !isLoading && !isError && (
+        {filteredSkills.length === 0 && !isLoading && !isError && (
           <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm text-slate-700">
-            No skills are available yet. Check back soon.
+            {skillItems.length === 0 ? 'No skills are available yet. Check back soon.' : 'No skills match your search. Try different keywords or categories.'}
           </div>
         )}
 
         <div className="grid gap-4 md:grid-cols-2">
-          {skillItems.map((skill: Skill) => (
+          {filteredSkills.map((skill: Skill) => (
             <Link
               key={skill.id}
               to={`/skills/${skill.id}`}

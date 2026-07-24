@@ -26,6 +26,9 @@ export default function NavBar(): JSX.Element {
               <Link to="/swaps" className="transition hover:text-cyan-200">
                 Swaps
               </Link>
+              <Link to="/credits" className="transition hover:text-cyan-200">
+                Credits
+              </Link>
               <Link to="/profile" className="transition hover:text-cyan-200">
                 Profile
               </Link>

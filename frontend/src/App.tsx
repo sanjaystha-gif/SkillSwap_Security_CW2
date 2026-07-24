@@ -12,6 +12,7 @@ import UserProfile from './pages/UserProfile';
 import CreateSkill from './pages/CreateSkill';
 import InitiateSwap from './pages/InitiateSwap';
 import Swaps from './pages/Swaps';
+import Credits from './pages/Credits';
 import Login from './pages/Login';
 import Register from './pages/Register';
 
@@ -70,6 +71,14 @@ function App(): JSX.Element {
             element={
               <ProtectedRoute>
                 <Swaps />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/credits"
+            element={
+              <ProtectedRoute>
+                <Credits />
               </ProtectedRoute>
             }
           />
