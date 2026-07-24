@@ -217,12 +217,14 @@ export default function Skills(): JSX.Element {
           </div>
         </div>
 
-        {(searchTerm || selectedCategory) && (
+        {(searchTerm || selectedCategory || statusFilter !== 'all' || sortOption !== 'default') && (
           <button
             type="button"
             onClick={() => {
               setSearchTerm('');
               setSelectedCategory('');
+              setStatusFilter('all');
+              setSortOption('default');
             }}
             className="mt-5 text-sm font-semibold text-teal-700 transition hover:text-teal-900"
           >

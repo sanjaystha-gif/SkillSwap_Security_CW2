@@ -40,6 +40,35 @@ export default function UserProfile(): JSX.Element {
     );
   }
 
+  const isPrivateProfile = profile ? !profile.is_public && !isMine : false;
+
+  if (isPrivateProfile) {
+    return (
+      <main className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
+        <div className="rounded-3xl border border-slate-200 bg-white p-10 shadow-sm">
+          <div className="space-y-4">
+            <h1 className="text-3xl font-semibold text-slate-950">This profile is private</h1>
+            <p className="text-sm leading-7 text-slate-600">
+              The member has chosen to keep this profile private. Only the owner may view full details and listings.
+            </p>
+            <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6">
+              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">Member</p>
+              <p className="mt-3 text-2xl font-semibold text-slate-950">{profile.display_name}</p>
+            </div>
+            {isMine && (
+              <Link
+                to="/profile"
+                className="inline-flex items-center justify-center rounded-full bg-teal-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-teal-900"
+              >
+                Edit your profile
+              </Link>
+            )}
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   if (profileLoading || skillsLoading) {
     return (
       <main className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
