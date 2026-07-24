@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { fetchSkillDetail, fetchMySkills } from '../usecases/skillsUseCases';
 import { submitSwapRequest } from '../usecases/swapUseCases';
 import type { Skill } from '../services/skillsService';
+import CreditChip from '../components/CreditChip';
 
 export default function InitiateSwap(): JSX.Element {
   const { skillId } = useParams<{ skillId: string }>();
@@ -25,7 +26,17 @@ export default function InitiateSwap(): JSX.Element {
   });
 
   const skills = useMemo(() => mySkills ?? [], [mySkills]);
-  const availableSkills = useMemo(() => skills.filter((skill) => skill.is_active), [skills]);
+  const availableSkills = useMemo(
+    () =>
+      skills
+        .filter((skill) => skill.is_active)
+        .sort((a, b) => a.title.localeCompare(b.title)),
+    [skills],
+  );
+  const selectedSkill = useMemo(
+    () => availableSkills.find((skill) => skill.id === selectedSkillId),
+    [availableSkills, selectedSkillId],
+  );
   const isOwner = Boolean(targetSkill && auth.user?.uid === targetSkill.owner_id);
 
   const swapMutation = useMutation({
@@ -180,10 +191,18 @@ export default function InitiateSwap(): JSX.Element {
             </label>
             <div
               id="targetSkill"
-              className="mt-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-700"
+              className="mt-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-slate-700"
             >
-              <p className="font-semibold">{targetSkill.title}</p>
-              <p className="mt-1 text-sm text-slate-600">{targetSkill.description}</p>
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="font-semibold text-slate-950">{targetSkill.title}</p>
+                  <p className="mt-1 text-sm text-slate-600">{targetSkill.description}</p>
+                </div>
+                <CreditChip value={targetSkill.credit_cost ?? 0} />
+              </div>
+              <p className="mt-4 text-sm text-slate-500">
+                This skill requires the credit amount above when a swap is confirmed.
+              </p>
             </div>
           </div>
 
@@ -200,13 +219,25 @@ export default function InitiateSwap(): JSX.Element {
               <option value="">Select a skill to offer...</option>
               {availableSkills.map((skill) => (
                 <option key={skill.id} value={skill.id}>
-                  {skill.title}
+                  {skill.title} — {skill.credit_cost ?? 0} credits
                 </option>
               ))}
             </select>
             <p className="mt-2 text-xs text-slate-600">
               {availableSkills.length} active skill{availableSkills.length === 1 ? '' : 's'} available
             </p>
+            {selectedSkill && (
+              <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+                <p className="font-semibold text-slate-950">Selected offer</p>
+                <div className="mt-3 flex items-center justify-between gap-3">
+                  <p>{selectedSkill.title}</p>
+                  <CreditChip value={selectedSkill.credit_cost ?? 0} />
+                </div>
+                <p className="mt-3 text-xs text-slate-500">
+                  Active skill and eligible for booking while this request is pending.
+                </p>
+              </div>
+            )}
           </div>
 
           {swapMutation.isError && (

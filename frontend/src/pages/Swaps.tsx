@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, useQueries } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
 import { fetchMySwaps, acceptSwapRequest, declineSwapRequest } from '../usecases/swapUseCases';
+import { fetchSkillDetail } from '../usecases/skillsUseCases';
+import type { Skill } from '../services/skillsService';
 import type { SwapRequest } from '../services/swapService';
 
 export default function Swaps(): JSX.Element {
@@ -18,6 +20,46 @@ export default function Swaps(): JSX.Element {
 
   const swapsList = useMemo(() => swaps ?? [], [swaps]);
   const userId = auth.user?.uid;
+
+  const uniqueSkillIds = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          swapsList.flatMap((swap) => [swap.requester_skill_id, swap.target_skill_id]),
+        ),
+      ),
+    [swapsList],
+  );
+
+  const skillQueries = useQueries({
+    queries: uniqueSkillIds.map((skillId) => ({
+      queryKey: ['skill', skillId],
+      queryFn: () => fetchSkillDetail(skillId),
+      enabled: Boolean(skillId),
+    })),
+  });
+
+  const skillMap = useMemo(
+    () =>
+      skillQueries.reduce((map, query) => {
+        if (query.data) {
+          map[query.data.id] = query.data;
+        }
+        return map;
+      }, {} as Record<string, Skill>),
+    [skillQueries],
+  );
+
+  const getSkillTitle = (skillId: string) => skillMap[skillId]?.title ?? skillId;
+
+  const getSkillLink = (skillId: string) => (
+    <Link
+      to={`/skills/${skillId}`}
+      className="text-sm font-semibold text-teal-950 underline decoration-dotted underline-offset-2 transition hover:text-teal-700"
+    >
+      {getSkillTitle(skillId)}
+    </Link>
+  );
 
   const isRequester = (swap: SwapRequest) => swap.requester_id === userId;
 
@@ -128,17 +170,17 @@ export default function Swaps(): JSX.Element {
                         <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                           You offer
                         </p>
-                        <p className="mt-2 text-sm font-semibold text-slate-950">
-                          {isRequester(swap) ? swap.requester_skill_id : swap.target_skill_id}
-                        </p>
+                        <div className="mt-2">
+                        {isRequester(swap) ? getSkillLink(swap.requester_skill_id) : getSkillLink(swap.target_skill_id)}
+                      </div>
                       </div>
                       <div>
                         <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                           They offer
                         </p>
-                        <p className="mt-2 text-sm font-semibold text-slate-950">
-                          {isRequester(swap) ? swap.target_skill_id : swap.requester_skill_id}
-                        </p>
+                        <div className="mt-2">
+                          {isRequester(swap) ? getSkillLink(swap.target_skill_id) : getSkillLink(swap.requester_skill_id)}
+                        </div>
                       </div>
                     </div>
 
@@ -211,17 +253,17 @@ export default function Swaps(): JSX.Element {
                         <p className="text-xs font-semibold uppercase tracking-wide text-green-600">
                           You offer
                         </p>
-                        <p className="mt-2 text-sm font-semibold text-green-950">
-                          {swap.requester_skill_id}
-                        </p>
+                        <div className="mt-2">
+                        {getSkillLink(swap.requester_skill_id)}
+                      </div>
                       </div>
                       <div>
                         <p className="text-xs font-semibold uppercase tracking-wide text-green-600">
                           They offer
                         </p>
-                        <p className="mt-2 text-sm font-semibold text-green-950">
-                          {swap.target_skill_id}
-                        </p>
+                        <div className="mt-2">
+                          {getSkillLink(swap.target_skill_id)}
+                        </div>
                       </div>
                     </div>
 
@@ -244,15 +286,35 @@ export default function Swaps(): JSX.Element {
           </h2>
           <div className="mt-4 space-y-3">
             {declined.map((swap) => (
-              <article key={swap.id} className="rounded-3xl border border-slate-200 bg-slate-50 p-6 shadow-sm opacity-60">
-                <div className="flex items-center gap-2">
-                  <span className="inline-block rounded-full bg-slate-200 px-2.5 py-0.5 text-xs font-semibold text-slate-600">
-                    Declined
-                  </span>
-                  <span className="text-sm text-slate-600">
-                    Declined {' '}
-                    {new Date(swap.updated_at).toLocaleDateString()}
-                  </span>
+              <article key={swap.id} className="rounded-3xl border border-slate-200 bg-slate-50 p-6 shadow-sm opacity-80">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="inline-block rounded-full bg-slate-200 px-2.5 py-0.5 text-xs font-semibold text-slate-600">
+                        Declined
+                      </span>
+                      <span className="text-sm text-slate-600">
+                        Declined {' '}
+                        {new Date(swap.updated_at).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+                  <Link
+                    to={`/skills/${isRequester(swap) ? swap.target_skill_id : swap.requester_skill_id}`}
+                    className="text-sm font-semibold text-teal-950 transition hover:text-teal-700"
+                  >
+                    View the listing
+                  </Link>
+                </div>
+                <div className="mt-4 grid gap-4 md:grid-cols-2 border-t border-slate-200 pt-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">You offered</p>
+                    <div className="mt-2">{getSkillLink(swap.requester_skill_id)}</div>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">They offered</p>
+                    <div className="mt-2">{getSkillLink(swap.target_skill_id)}</div>
+                  </div>
                 </div>
               </article>
             ))}

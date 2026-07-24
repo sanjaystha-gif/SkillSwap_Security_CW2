@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowRight, BadgeCheck, BookOpen, Sparkles } from 'lucide-react';
@@ -12,6 +12,7 @@ import CreditChip from '../components/CreditChip';
 export default function SkillDetail(): JSX.Element {
   const { id } = useParams<{ id: string }>();
   const auth = useAuth();
+  const [copied, setCopied] = useState(false);
 
   const { data: skill, isLoading, isError, error } = useQuery<Skill>({
     queryKey: ['skill', id],
@@ -27,6 +28,16 @@ export default function SkillDetail(): JSX.Element {
 
   const skillData = useMemo(() => skill, [skill]);
   const ownerData = useMemo(() => owner, [owner]);
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1800);
+    } catch {
+      setCopied(false);
+    }
+  };
 
   if (!id) {
     return (
@@ -69,6 +80,11 @@ export default function SkillDetail(): JSX.Element {
                 {skillData.category}
               </p>
             )}
+
+            <div className="mt-4 flex items-center gap-3">
+              <CreditChip value={skillData.credit_cost ?? 0} />
+              <span className="text-sm text-slate-500">Credits held when the swap is confirmed</span>
+            </div>
 
             <p className="mt-6 text-base leading-8 text-slate-700">{skillData.description}</p>
 
@@ -130,12 +146,21 @@ export default function SkillDetail(): JSX.Element {
                     <BadgeCheck className="h-4 w-4" />
                     Verified skill exchange member
                   </div>
-                  <Link
-                    to={`/users/${ownerData.id}`}
-                    className="mt-6 inline-flex items-center justify-center rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-slate-100"
-                  >
-                    View provider profile
-                  </Link>
+                  <div className="mt-6 flex flex-col gap-3">
+                    <Link
+                      to={`/users/${ownerData.id}`}
+                      className="inline-flex items-center justify-center rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-slate-100"
+                    >
+                      View provider profile
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={handleCopyLink}
+                      className="inline-flex items-center justify-center rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20"
+                    >
+                      {copied ? 'Copied!' : 'Copy listing link'}
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <p className="mt-6 text-sm leading-7 text-slate-300">Profile details are loading.</p>

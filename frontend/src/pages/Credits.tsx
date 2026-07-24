@@ -44,6 +44,10 @@ export default function Credits(): JSX.Element {
   });
 
   const transactionsList = useMemo(() => transactions ?? [], [transactions]);
+  const sortedTransactions = useMemo(
+    () => [...transactionsList].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
+    [transactionsList],
+  );
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
@@ -152,7 +156,7 @@ export default function Credits(): JSX.Element {
         )}
 
         <div className="mt-6 space-y-4">
-          {transactionsList.map((transaction) => {
+          {sortedTransactions.map((transaction) => {
             const Icon = transactionIcons[transaction.transaction_type] ?? ShieldCheck;
             const statusLabel = transactionLabels[transaction.transaction_type] ?? 'Transaction';
             const statusStyle = transactionStyles[transaction.transaction_type] ?? transactionStyles.adjustment;
@@ -178,7 +182,12 @@ export default function Credits(): JSX.Element {
                       {transaction.amount}
                     </p>
                     <p className="mt-1 text-xs text-slate-500">
-                      {transactionDate.toLocaleDateString()} • {transactionDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {transactionDate.toLocaleDateString(undefined, {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                      })}{' '}
+                      • {transactionDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </p>
                   </div>
                 </div>
