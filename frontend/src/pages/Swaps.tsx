@@ -50,7 +50,7 @@ export default function Swaps(): JSX.Element {
     [skillQueries],
   );
 
-  const getSkillTitle = (skillId: string) => skillMap[skillId]?.title ?? skillId;
+  const getSkillTitle = (skillId: string) => skillMap[skillId]?.title ?? 'Unknown skill';
 
   const getSkillLink = (skillId: string) => (
     <Link
@@ -62,6 +62,8 @@ export default function Swaps(): JSX.Element {
   );
 
   const isRequester = (swap: SwapRequest) => swap.requester_id === userId;
+  const getUserSkillId = (swap: SwapRequest) => (isRequester(swap) ? swap.requester_skill_id : swap.target_skill_id);
+  const getPartnerSkillId = (swap: SwapRequest) => (isRequester(swap) ? swap.target_skill_id : swap.requester_skill_id);
 
   const actionMutation = useMutation({
     mutationFn: ({ swapId, action }: { swapId: string; action: 'accept' | 'decline' }) => {
@@ -171,15 +173,15 @@ export default function Swaps(): JSX.Element {
                           You offer
                         </p>
                         <div className="mt-2">
-                        {isRequester(swap) ? getSkillLink(swap.requester_skill_id) : getSkillLink(swap.target_skill_id)}
-                      </div>
+                          {getSkillLink(getUserSkillId(swap))}
+                        </div>
                       </div>
                       <div>
                         <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                           They offer
                         </p>
                         <div className="mt-2">
-                          {isRequester(swap) ? getSkillLink(swap.target_skill_id) : getSkillLink(swap.requester_skill_id)}
+                          {getSkillLink(getPartnerSkillId(swap))}
                         </div>
                       </div>
                     </div>
@@ -254,15 +256,15 @@ export default function Swaps(): JSX.Element {
                           You offer
                         </p>
                         <div className="mt-2">
-                        {getSkillLink(swap.requester_skill_id)}
-                      </div>
+                          {getSkillLink(getUserSkillId(swap))}
+                        </div>
                       </div>
                       <div>
                         <p className="text-xs font-semibold uppercase tracking-wide text-green-600">
                           They offer
                         </p>
                         <div className="mt-2">
-                          {getSkillLink(swap.target_skill_id)}
+                          {getSkillLink(getPartnerSkillId(swap))}
                         </div>
                       </div>
                     </div>
@@ -309,11 +311,11 @@ export default function Swaps(): JSX.Element {
                 <div className="mt-4 grid gap-4 md:grid-cols-2 border-t border-slate-200 pt-4">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">You offered</p>
-                    <div className="mt-2">{getSkillLink(swap.requester_skill_id)}</div>
+                    <div className="mt-2">{getSkillLink(getUserSkillId(swap))}</div>
                   </div>
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">They offered</p>
-                    <div className="mt-2">{getSkillLink(swap.target_skill_id)}</div>
+                    <div className="mt-2">{getSkillLink(getPartnerSkillId(swap))}</div>
                   </div>
                 </div>
               </article>
