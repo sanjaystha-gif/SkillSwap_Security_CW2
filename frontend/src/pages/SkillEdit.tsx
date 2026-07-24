@@ -10,8 +10,21 @@ import type { Skill, UpdateSkillPayload } from '../services/skillsService';
 const skillEditSchema = z.object({
   title: z.string().min(3, 'Title must be at least 3 characters'),
   description: z.string().min(10, 'Description must be at least 10 characters'),
-  category: z.string().optional(),
+  category: z.preprocess(
+    (value) => (typeof value === 'string' ? value.trim() || undefined : value),
+    z.string().max(80).optional(),
+  ),
   is_active: z.boolean().optional(),
+  credit_cost: z.preprocess(
+    (value) => {
+      if (typeof value === 'string') {
+        const trimmed = value.trim();
+        return trimmed === '' ? undefined : Number(trimmed);
+      }
+      return value;
+    },
+    z.number().min(0, 'Credit cost must be 0 or more').max(999, 'Credit cost must be 999 or less').optional(),
+  ),
 });
 
 type SkillFormData = z.infer<typeof skillEditSchema>;
@@ -42,6 +55,7 @@ export default function SkillEdit(): JSX.Element {
         description: skill.description,
         category: skill.category ?? '',
         is_active: skill.is_active,
+        credit_cost: skill.credit_cost ?? undefined,
       });
     }
   }, [skill, reset]);
@@ -59,6 +73,7 @@ export default function SkillEdit(): JSX.Element {
       description: data.description,
       category: data.category,
       is_active: data.is_active,
+      credit_cost: data.credit_cost,
     };
     updateMutation.mutate(payload);
   };
@@ -139,6 +154,22 @@ export default function SkillEdit(): JSX.Element {
               className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-950 placeholder-slate-400 focus:border-teal-950 focus:outline-none"
               placeholder="e.g., Design, Development"
             />
+          </div>
+
+          <div>
+            <label htmlFor="credit_cost" className="block text-sm font-semibold text-slate-950">
+              Credit cost
+            </label>
+            <input
+              {...register('credit_cost')}
+              type="number"
+              id="credit_cost"
+              min={0}
+              step={1}
+              className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-950 placeholder-slate-400 focus:border-teal-950 focus:outline-none"
+              placeholder="e.g. 20"
+            />
+            {errors.credit_cost && <p className="mt-1 text-sm text-red-600">{errors.credit_cost.message}</p>}
           </div>
 
           <div>

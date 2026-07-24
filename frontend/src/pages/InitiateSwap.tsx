@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
 import { fetchSkillDetail, fetchMySkills } from '../usecases/skillsUseCases';
@@ -25,6 +25,8 @@ export default function InitiateSwap(): JSX.Element {
   });
 
   const skills = useMemo(() => mySkills ?? [], [mySkills]);
+  const availableSkills = useMemo(() => skills.filter((skill) => skill.is_active), [skills]);
+  const isOwner = Boolean(targetSkill && auth.user?.uid === targetSkill.owner_id);
 
   const swapMutation = useMutation({
     mutationFn: (requesterSkillId: string) =>
@@ -92,6 +94,35 @@ export default function InitiateSwap(): JSX.Element {
     );
   }
 
+  if (isOwner) {
+    return (
+      <main className="mx-auto max-w-2xl px-4 py-12 sm:px-6 lg:px-8">
+        <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm sm:p-12">
+          <h1 className="text-3xl font-semibold text-slate-950">This is your own skill</h1>
+          <p className="mt-2 text-sm leading-6 text-slate-600">
+            You cannot request a swap for a skill you own. Manage this listing from your skills dashboard instead.
+          </p>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={() => navigate('/my-skills')}
+              className="inline-flex items-center justify-center rounded-2xl bg-teal-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-teal-900"
+            >
+              Manage my skills
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/skills')}
+              className="inline-flex items-center justify-center rounded-2xl border border-slate-200 px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-slate-50"
+            >
+              Browse other skills
+            </button>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
   if (skills.length === 0) {
     return (
       <main className="mx-auto max-w-2xl px-4 py-12 sm:px-6 lg:px-8">
@@ -101,12 +132,33 @@ export default function InitiateSwap(): JSX.Element {
             You need to create at least one skill before you can request a swap with another user.
           </p>
           <div className="mt-6">
-            <a
-              href="/skills/create"
+            <Link
+              to="/skills/create"
               className="inline-flex items-center justify-center rounded-2xl bg-teal-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-teal-900"
             >
               Create a skill
-            </a>
+            </Link>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  if (availableSkills.length === 0) {
+    return (
+      <main className="mx-auto max-w-2xl px-4 py-12 sm:px-6 lg:px-8">
+        <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm sm:p-12">
+          <h1 className="text-3xl font-semibold text-slate-950">No active skills available</h1>
+          <p className="mt-2 text-sm leading-6 text-slate-600">
+            You have created skills, but none are active. Activate one of your skills before sending a swap request.
+          </p>
+          <div className="mt-6">
+            <Link
+              to="/my-skills"
+              className="inline-flex items-center justify-center rounded-2xl bg-teal-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-teal-900"
+            >
+              Manage my skills
+            </Link>
           </div>
         </section>
       </main>
@@ -146,14 +198,14 @@ export default function InitiateSwap(): JSX.Element {
               className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-950 focus:border-teal-950 focus:outline-none"
             >
               <option value="">Select a skill to offer...</option>
-              {skills.map((skill) => (
+              {availableSkills.map((skill) => (
                 <option key={skill.id} value={skill.id}>
                   {skill.title}
                 </option>
               ))}
             </select>
             <p className="mt-2 text-xs text-slate-600">
-              {skills.length} skill{skills.length === 1 ? '' : 's'} available
+              {availableSkills.length} active skill{availableSkills.length === 1 ? '' : 's'} available
             </p>
           </div>
 

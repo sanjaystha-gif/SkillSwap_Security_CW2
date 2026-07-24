@@ -8,7 +8,20 @@ import { submitNewSkill } from '../usecases/skillsUseCases';
 const schema = z.object({
   title: z.string().min(3, 'Title must be at least 3 characters'),
   description: z.string().min(10, 'Description must be at least 10 characters'),
-  category: z.string().max(80).optional(),
+  category: z.preprocess(
+    (value) => (typeof value === 'string' ? value.trim() || undefined : value),
+    z.string().max(80).optional(),
+  ),
+  credit_cost: z.preprocess(
+    (value) => {
+      if (typeof value === 'string') {
+        const trimmed = value.trim();
+        return trimmed === '' ? undefined : Number(trimmed);
+      }
+      return value;
+    },
+    z.number().min(0, 'Credit cost must be 0 or more').max(999, 'Credit cost must be 999 or less').optional(),
+  ),
 });
 
 type SkillFormValues = z.infer<typeof schema>;
@@ -76,6 +89,20 @@ export default function CreateSkill(): JSX.Element {
               className="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
             />
             {errors.category && <p className="mt-2 text-sm text-red-600">{errors.category.message}</p>}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700">Credit cost</label>
+            <input
+              type="number"
+              {...register('credit_cost')}
+              min={0}
+              step={1}
+              className="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
+              placeholder="e.g. 20"
+            />
+            {errors.credit_cost && <p className="mt-2 text-sm text-red-600">{errors.credit_cost.message}</p>}
+            <p className="mt-2 text-sm text-slate-500">Set how many credits this skill is worth for swap requests.</p>
           </div>
 
           {serverError && <p className="text-sm text-red-600">{serverError}</p>}

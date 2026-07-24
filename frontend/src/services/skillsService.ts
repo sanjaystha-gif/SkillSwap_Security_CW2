@@ -7,6 +7,7 @@ export interface Skill {
   category: string | null;
   owner_id: string;
   is_active: boolean;
+  credit_cost?: number;
 }
 
 export interface SkillsResponse {
@@ -51,6 +52,7 @@ export interface CreateSkillPayload {
   title: string;
   description: string;
   category?: string;
+  credit_cost?: number;
 }
 
 export async function createSkill(payload: CreateSkillPayload): Promise<Skill> {
@@ -65,6 +67,7 @@ export interface UpdateSkillPayload {
   description?: string;
   category?: string;
   is_active?: boolean;
+  credit_cost?: number;
 }
 
 export async function updateSkill(

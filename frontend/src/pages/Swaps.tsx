@@ -17,6 +17,9 @@ export default function Swaps(): JSX.Element {
   });
 
   const swapsList = useMemo(() => swaps ?? [], [swaps]);
+  const userId = auth.user?.uid;
+
+  const isRequester = (swap: SwapRequest) => swap.requester_id === userId;
 
   const actionMutation = useMutation({
     mutationFn: ({ swapId, action }: { swapId: string; action: 'accept' | 'decline' }) => {
@@ -38,10 +41,32 @@ export default function Swaps(): JSX.Element {
   return (
     <main className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
       <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm sm:p-12">
-        <h1 className="text-3xl font-semibold text-slate-950">Skill swaps</h1>
-        <p className="mt-2 text-sm leading-6 text-slate-600">
-          View and manage your skill exchange requests.
-        </p>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-semibold text-slate-950">Skill swaps</h1>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              View and manage your skill exchange requests.
+            </p>
+          </div>
+          <div className="rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+            <span className="font-semibold text-slate-950">Total swaps</span> {swapsList.length}
+          </div>
+        </div>
+
+        <div className="mt-6 grid gap-4 sm:grid-cols-3">
+          <div className="rounded-3xl border border-amber-200 bg-amber-50 p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-amber-700">Pending</p>
+            <p className="mt-3 text-3xl font-semibold text-amber-950">{pending.length}</p>
+          </div>
+          <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-700">Accepted</p>
+            <p className="mt-3 text-3xl font-semibold text-emerald-950">{accepted.length}</p>
+          </div>
+          <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Declined</p>
+            <p className="mt-3 text-3xl font-semibold text-slate-950">{declined.length}</p>
+          </div>
+        </div>
       </section>
 
       {isError && (
@@ -104,7 +129,7 @@ export default function Swaps(): JSX.Element {
                           You offer
                         </p>
                         <p className="mt-2 text-sm font-semibold text-slate-950">
-                          {swap.requester_skill_id}
+                          {isRequester(swap) ? swap.requester_skill_id : swap.target_skill_id}
                         </p>
                       </div>
                       <div>
@@ -112,29 +137,35 @@ export default function Swaps(): JSX.Element {
                           They offer
                         </p>
                         <p className="mt-2 text-sm font-semibold text-slate-950">
-                          {swap.target_skill_id}
+                          {isRequester(swap) ? swap.target_skill_id : swap.requester_skill_id}
                         </p>
                       </div>
                     </div>
 
-                    <div className="flex gap-3">
-                      <button
-                        type="button"
-                        onClick={() => actionMutation.mutate({ swapId: swap.id, action: 'accept' })}
-                        disabled={actionMutation.isPending}
-                        className="flex-1 rounded-2xl bg-green-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-green-900 disabled:opacity-50"
-                      >
-                        Accept
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => actionMutation.mutate({ swapId: swap.id, action: 'decline' })}
-                        disabled={actionMutation.isPending}
-                        className="flex-1 rounded-2xl border border-red-200 px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:opacity-50"
-                      >
-                        Decline
-                      </button>
-                    </div>
+                    {!isRequester(swap) ? (
+                      <div className="flex gap-3">
+                        <button
+                          type="button"
+                          onClick={() => actionMutation.mutate({ swapId: swap.id, action: 'accept' })}
+                          disabled={actionMutation.isPending}
+                          className="flex-1 rounded-2xl bg-green-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-green-900 disabled:opacity-50"
+                        >
+                          Accept
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => actionMutation.mutate({ swapId: swap.id, action: 'decline' })}
+                          disabled={actionMutation.isPending}
+                          className="flex-1 rounded-2xl border border-red-200 px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:opacity-50"
+                        >
+                          Decline
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+                        Your request is pending. You will be notified when the other user responds.
+                      </div>
+                    )}
                   </div>
                 )}
               </article>

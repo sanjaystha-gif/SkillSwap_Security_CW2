@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
 import { fetchMySkills, removeSkill } from '../usecases/skillsUseCases';
 import type { Skill } from '../services/skillsService';
+import CreditChip from '../components/CreditChip';
 
 export default function MySkills(): JSX.Element {
   const auth = useAuth();
@@ -37,6 +38,11 @@ export default function MySkills(): JSX.Element {
   };
 
   const skillItems = useMemo(() => data ?? [], [data]);
+  const activeSkillsCount = useMemo(
+    () => skillItems.filter((skill) => skill.is_active).length,
+    [skillItems],
+  );
+  const inactiveSkillsCount = skillItems.length - activeSkillsCount;
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
@@ -54,6 +60,21 @@ export default function MySkills(): JSX.Element {
           >
             Post new skill
           </Link>
+        </div>
+
+        <div className="mt-8 grid gap-4 sm:grid-cols-3">
+          <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
+            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">Total listings</p>
+            <p className="mt-3 text-3xl font-semibold text-slate-950">{skillItems.length}</p>
+          </div>
+          <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
+            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">Active</p>
+            <p className="mt-3 text-3xl font-semibold text-slate-950">{activeSkillsCount}</p>
+          </div>
+          <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
+            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">Inactive</p>
+            <p className="mt-3 text-3xl font-semibold text-slate-950">{inactiveSkillsCount}</p>
+          </div>
         </div>
       </section>
 
@@ -88,7 +109,7 @@ export default function MySkills(): JSX.Element {
 
         <div className="grid gap-4 md:grid-cols-2">
           {skillItems.map((skill) => (
-            <article key={skill.id} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <article key={skill.id} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1">
                   <Link
@@ -101,9 +122,10 @@ export default function MySkills(): JSX.Element {
                     <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-slate-500">{skill.category}</p>
                   )}
                 </div>
-                <div>
+                <div className="flex flex-col items-end gap-2">
+                  <CreditChip value={skill.credit_cost ?? 0} />
                   {skill.is_active ? (
-                    <span className="rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-700">
+                    <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-700">
                       Active
                     </span>
                   ) : (
@@ -114,7 +136,7 @@ export default function MySkills(): JSX.Element {
                 </div>
               </div>
               <p className="mt-3 line-clamp-3 text-sm leading-6 text-slate-600">{skill.description}</p>
-              <div className="mt-4 flex gap-2">
+              <div className="mt-5 flex flex-wrap items-center gap-3">
                 <Link
                   to={`/skills/${skill.id}/edit`}
                   className="text-sm font-semibold text-teal-950 transition hover:text-teal-700"
