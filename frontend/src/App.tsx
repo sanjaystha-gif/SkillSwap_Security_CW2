@@ -1,5 +1,8 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { ToastProvider } from './context/ToastContext';
+import ErrorBoundary from './components/ErrorBoundary';
+import ToastContainer from './components/ToastContainer';
 import NavBar from './components/NavBar';
 import ProtectedRoute from './components/ProtectedRoute';
 import Home from './pages/Home';
@@ -19,10 +22,12 @@ import Register from './pages/Register';
 
 function App(): JSX.Element {
   return (
-    <AuthProvider>
-      <div className="min-h-screen bg-slate-50 text-slate-900">
-        <NavBar />
-        <Routes>
+    <ErrorBoundary>
+      <AuthProvider>
+        <ToastProvider>
+          <div className="min-h-screen bg-slate-50 text-slate-900">
+            <NavBar />
+            <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/skills" element={<Skills />} />
           <Route
@@ -94,9 +99,12 @@ function App(): JSX.Element {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </div>
-    </AuthProvider>
+            </Routes>
+            <ToastContainer />
+          </div>
+        </ToastProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
 
