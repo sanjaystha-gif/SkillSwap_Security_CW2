@@ -37,6 +37,9 @@ export default function InitiateSwap(): JSX.Element {
     () => availableSkills.find((skill) => skill.id === selectedSkillId),
     [availableSkills, selectedSkillId],
   );
+  const creditGap = selectedSkill
+    ? (targetSkill?.credit_cost ?? 0) - (selectedSkill.credit_cost ?? 0)
+    : 0;
   const isOwner = Boolean(targetSkill && auth.user?.uid === targetSkill.owner_id);
 
   const swapMutation = useMutation({
@@ -233,6 +236,16 @@ export default function InitiateSwap(): JSX.Element {
                   <p>{selectedSkill.title}</p>
                   <CreditChip value={selectedSkill.credit_cost ?? 0} />
                 </div>
+                <p className="mt-3 text-sm text-slate-600">
+                  Your selected offer is worth <span className="font-semibold">{selectedSkill.credit_cost ?? 0}</span> credits.
+                </p>
+                <p className={`mt-2 text-xs ${creditGap > 0 ? 'text-rose-600' : creditGap < 0 ? 'text-emerald-700' : 'text-slate-500'}`}>
+                  {creditGap > 0
+                    ? `This request requires ${creditGap} more credits than your selected offer.`
+                    : creditGap < 0
+                    ? `Your offer is worth ${Math.abs(creditGap)} credits more than the target skill.`
+                    : 'This is an even credit match.'}
+                </p>
                 <p className="mt-3 text-xs text-slate-500">
                   Active skill and eligible for booking while this request is pending.
                 </p>

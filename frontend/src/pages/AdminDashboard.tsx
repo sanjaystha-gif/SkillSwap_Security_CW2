@@ -12,13 +12,13 @@ export default function AdminDashboard(): JSX.Element {
   const { data: stats, isLoading: statsLoading, isError: statsError, error: statsErrorMsg } = useQuery<AdminStats>({
     queryKey: ['adminStats'],
     queryFn: () => fetchAdminStats(auth.accessToken ?? undefined),
-    enabled: Boolean(auth.accessToken),
+    enabled: Boolean(auth.accessToken && isAdmin),
   });
 
   const { data: activities, isLoading: activitiesLoading, isError: activitiesError, error: activitiesErrorMsg } = useQuery<ActivityLog[]>({
     queryKey: ['recentActivity'],
     queryFn: () => fetchRecentActivity(20, auth.accessToken ?? undefined),
-    enabled: Boolean(auth.accessToken),
+    enabled: Boolean(auth.accessToken && isAdmin),
   });
 
   const activityList = useMemo(() => activities ?? [], [activities]);
