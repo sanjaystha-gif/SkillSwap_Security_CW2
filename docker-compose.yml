@@ -1,0 +1,89 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: skillswap_postgres
+    environment:
+      POSTGRES_DB: ${DB_NAME:-skillswap}
+      POSTGRES_USER: ${DB_USER:-skillswap_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-skillswap_dev_password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-skillswap_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - skillswap_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: skillswap_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - skillswap_network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: skillswap_backend
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-skillswap}
+      DB_USER: ${DB_USER:-skillswap_user}
+      DB_PASSWORD: ${DB_PASSWORD:-skillswap_dev_password}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      NODE_ENV: ${NODE_ENV:-development}
+      API_PORT: 5001
+    ports:
+      - "5001:5001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/migrations:/app/migrations
+    networks:
+      - skillswap_network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: skillswap_frontend
+    environment:
+      VITE_API_URL: http://backend:5001/api/v1
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+    networks:
+      - skillswap_network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  skillswap_network:
+    driver: bridge
