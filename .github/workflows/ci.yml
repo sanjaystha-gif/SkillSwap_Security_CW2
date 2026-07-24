@@ -72,6 +72,18 @@ jobs:
       - name: Build frontend
         run: cd frontend && npm run build
 
+      - name: Start frontend preview and run E2E tests
+        run: |
+          cd frontend
+          # ensure build present
+          npm run build
+          # start preview server in background
+          npx vite preview --port 5173 &
+          sleep 2
+          # install Playwright browsers and run tests
+          npx playwright install --with-deps
+          npx playwright test
+
   security:
     runs-on: ubuntu-latest
 
