@@ -7,8 +7,10 @@ import authRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import skillsRoutes from './routes/skillsRoutes.js';
 import cookieMiddleware from './middleware/cookieMiddleware.js';
+import rateLimiter from './middleware/rateLimiter.js';
 import swapsRoutes from './routes/swapsRoutes.js';
 import creditsRoutes from './routes/creditsRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
 import { AppError, InternalError } from './utils/errors.js';
 
 dotenv.config();
@@ -35,6 +37,9 @@ app.use(express.urlencoded({ limit: '10kb', extended: true }));
 // Cookie middleware (populates req.cookies)
 app.use(cookieMiddleware);
 
+// Rate limiting to prevent abusive requests
+app.use(rateLimiter);
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -54,6 +59,7 @@ app.use('/api/v1/skills', skillsRoutes);
 // Mount swaps and credits
 app.use('/api/v1/swaps', swapsRoutes);
 app.use('/api/v1/credits', creditsRoutes);
+app.use('/api/v1/admin', adminRoutes);
 
 // TODO: mount other route modules here (users, swaps, credits, moderation, admin)
 

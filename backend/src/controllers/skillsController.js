@@ -1,6 +1,7 @@
 import pool from '../config/database.js';
 import { z } from 'zod';
 import { ValidationError, NotFoundError } from '../utils/errors.js';
+import { logAudit } from '../utils/audit.js';
 
 const createSkillSchema = z.object({
   title: z.string().min(3).max(120),
@@ -46,6 +47,16 @@ export async function createSkill(req, res, next) {
       [title, description, category || null, req.user.uid],
     );
 
+    await logAudit({
+      actor_id: req.user.uid,
+      actor_role: 'user',
+      action: 'skill.create',
+      resource_type: 'skill',
+      resource_id: result.rows[0].id,
+      ip_address: req.ip,
+      details: { title },
+    });
+
     res.status(201).json({ skill: result.rows[0] });
   } catch (err) {
     next(err);
@@ -74,6 +85,15 @@ export async function updateSkill(req, res, next) {
 
     values.push(id);
     await pool.query(`UPDATE skills SET ${fields.join(', ')} WHERE id = $${idx}`, values);
+    await logAudit({
+      actor_id: req.user.uid,
+      actor_role: 'user',
+      action: 'skill.update',
+      resource_type: 'skill',
+      resource_id: id,
+      ip_address: req.ip,
+      details: req.body,
+    });
     res.json({ message: 'Skill updated' });
   } catch (err) {
     next(err);
@@ -90,6 +110,14 @@ export async function deleteSkill(req, res, next) {
     if (existing.rows[0].owner_id !== req.user.uid) return res.status(403).json({ message: 'Forbidden' });
 
     await pool.query('DELETE FROM skills WHERE id = $1', [id]);
+    await logAudit({
+      actor_id: req.user.uid,
+      actor_role: 'user',
+      action: 'skill.delete',
+      resource_type: 'skill',
+      resource_id: id,
+      ip_address: req.ip,
+    });
     res.status(204).send();
   } catch (err) {
     next(err);

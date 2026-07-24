@@ -12,6 +12,7 @@ import {
   signRefreshToken,
   verifyRefreshToken,
 } from '../utils/jwt.js';
+import { logAudit } from '../utils/audit.js';
 
 // Helper: parse simple cookie header into object
 function parseCookies(req) {
@@ -102,6 +103,16 @@ export async function registerUser(req, res, next) {
       'INSERT INTO profiles (user_id, is_public) VALUES ($1, true)',
       [user.id],
     );
+
+    await logAudit({
+      actor_id: user.id,
+      actor_role: 'user',
+      action: 'user.register',
+      resource_type: 'user',
+      resource_id: user.id,
+      ip_address: req.ip,
+      details: { email: user.email },
+    });
 
     res.status(201).json({
       user_id: user.id,
@@ -221,8 +232,18 @@ export async function login(req, res, next) {
 
       const session = sessionInsert.rows[0];
 
-      const accessToken = signAccessToken({ sub: user.id, uid: user.id });
+      const accessToken = signAccessToken({ sub: user.id, uid: user.id, role: user.role });
       const refreshToken = signRefreshToken({ sid: session.id, uid: user.id });
+
+      await logAudit({
+        actor_id: user.id,
+        actor_role: user.role,
+        action: 'user.login',
+        resource_type: 'session',
+        resource_id: session.id,
+        ip_address: req.ip,
+        details: { method: 'password' },
+      });
 
       // Set HTTP-only refresh cookie (scoped to auth routes)
       const secure = process.env.NODE_ENV === 'production';
@@ -295,6 +316,14 @@ export async function logout(req, res, next) {
     const sid = payload?.sid;
     if (sid) {
       await pool.query('UPDATE sessions SET revoked = true, updated_at = NOW() WHERE id = $1', [sid]);
+      await logAudit({
+        actor_id: payload?.uid || null,
+        actor_role: 'user',
+        action: 'user.logout',
+        resource_type: 'session',
+        resource_id: sid,
+        ip_address: req.ip,
+      });
     }
 
     const secure = process.env.NODE_ENV === 'production';
@@ -348,8 +377,20 @@ export async function refreshToken(req, res, next) {
     // Revoke old session
     await pool.query('UPDATE sessions SET revoked = true, updated_at = NOW() WHERE id = $1', [session.id]);
 
-    const accessToken = signAccessToken({ sub: session.user_id, uid: session.user_id });
+    const profile = await pool.query('SELECT role FROM users WHERE id = $1', [session.user_id]);
+    const role = profile.rows[0]?.role || 'member';
+
+    const accessToken = signAccessToken({ sub: session.user_id, uid: session.user_id, role });
     const refreshToken = signRefreshToken({ sid: newSession.id, uid: session.user_id });
+
+    await logAudit({
+      actor_id: session.user_id,
+      actor_role: role,
+      action: 'token.refresh',
+      resource_type: 'session',
+      resource_id: newSession.id,
+      ip_address: req.ip,
+    });
 
     // Set HTTP-only cookie for rotated refresh token
     const secure = process.env.NODE_ENV === 'production';

@@ -1,6 +1,7 @@
 import pool from '../config/database.js';
 import { ValidationError, NotFoundError } from '../utils/errors.js';
 import { z } from 'zod';
+import { logAudit } from '../utils/audit.js';
 
 const updateProfileSchema = z.object({
   display_name: z.string().min(3).max(60).optional(),
@@ -83,6 +84,16 @@ export async function updateProfile(req, res, next) {
       params.push(id);
       await pool.query(`UPDATE profiles SET ${setParts.join(', ')} WHERE user_id = $${pIdx}`, params);
     }
+
+    await logAudit({
+      actor_id: req.user.uid,
+      actor_role: 'user',
+      action: 'profile.update',
+      resource_type: 'profile',
+      resource_id: req.user.uid,
+      ip_address: req.ip,
+      details: body,
+    });
 
     res.json({ message: 'Profile updated' });
   } catch (err) {

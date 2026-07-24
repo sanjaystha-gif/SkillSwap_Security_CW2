@@ -1,5 +1,6 @@
 import pool from '../config/database.js';
 import { ValidationError, NotFoundError } from '../utils/errors.js';
+import { logAudit } from '../utils/audit.js';
 
 export async function listSwaps(req, res, next) {
   try {
@@ -23,6 +24,16 @@ export async function createSwap(req, res, next) {
       [req.user.uid, responder_id, skill_id, message || null],
     );
 
+    await logAudit({
+      actor_id: req.user.uid,
+      actor_role: 'user',
+      action: 'swap.request',
+      resource_type: 'swap',
+      resource_id: q.rows[0].id,
+      ip_address: req.ip,
+      details: { skill_id, responder_id },
+    });
+
     res.status(201).json({ swap: q.rows[0] });
   } catch (err) {
     next(err);
@@ -45,6 +56,15 @@ export async function respondSwap(req, res, next) {
 
     const newStatus = action === 'accept' ? 'accepted' : 'rejected';
     await pool.query('UPDATE swaps SET status = $1, updated_at = NOW() WHERE id = $2', [newStatus, id]);
+    await logAudit({
+      actor_id: req.user.uid,
+      actor_role: 'user',
+      action: `swap.${newStatus}`,
+      resource_type: 'swap',
+      resource_id: id,
+      ip_address: req.ip,
+      details: { action },
+    });
 
     res.json({ id, status: newStatus });
   } catch (err) {

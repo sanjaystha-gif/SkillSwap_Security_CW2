@@ -1,5 +1,6 @@
 import pool from '../config/database.js';
 import { ValidationError } from '../utils/errors.js';
+import { logAudit } from '../utils/audit.js';
 
 export async function getBalance(req, res, next) {
   try {
@@ -23,6 +24,16 @@ export async function addCredit(req, res, next) {
       'INSERT INTO credit_ledger (user_id, change_type, amount, metadata) VALUES ($1, $2, $3, $4)',
       [userId, 'credit', amount, JSON.stringify({ reason: reason || null })],
     );
+
+    await logAudit({
+      actor_id: userId,
+      actor_role: 'user',
+      action: 'credit.add',
+      resource_type: 'credit_ledger',
+      resource_id: null,
+      ip_address: req.ip,
+      details: { amount, reason },
+    });
 
     res.status(201).json({ message: 'Credit added' });
   } catch (err) {
