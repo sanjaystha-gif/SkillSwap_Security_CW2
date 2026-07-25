@@ -19,6 +19,10 @@ import Credits from './pages/Credits';
 import AdminDashboard from './pages/AdminDashboard';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import MFAChallenge from './pages/MFAChallenge';
+import VerifyEmail from './pages/VerifyEmail';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 
 function App(): JSX.Element {
   return (
@@ -97,7 +101,11 @@ function App(): JSX.Element {
             }
           />
           <Route path="/login" element={<Login />} />
+          <Route path="/login/mfa" element={<MFAChallenge />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
             <ToastContainer />

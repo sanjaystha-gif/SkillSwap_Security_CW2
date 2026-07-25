@@ -63,7 +63,6 @@ export async function updateProfile(req, res, next) {
     if (fields.length === 0) return res.json({ message: 'No changes' });
 
     // Update users.display_name separately from profiles
-    const updates = [];
     const params = [];
     let pIdx = 1;
 

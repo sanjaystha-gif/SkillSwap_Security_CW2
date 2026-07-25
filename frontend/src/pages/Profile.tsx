@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
 import { fetchProfile, saveProfile } from '../usecases/userUseCases';
 import type { UserProfile } from '../services/userService';
@@ -18,6 +18,7 @@ type ProfileFormValues = z.infer<typeof schema>;
 
 export default function Profile(): JSX.Element {
   const auth = useAuth();
+  const queryClient = useQueryClient();
   const userId = auth.user?.uid;
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
@@ -60,6 +61,7 @@ export default function Profile(): JSX.Element {
 
     try {
       await saveProfile(userId as string, values, auth.accessToken ?? undefined);
+      queryClient.invalidateQueries({ queryKey: ['profile', userId] });
       setSuccessMessage('Profile saved successfully.');
     } catch (err) {
       const apiError = err as { payload?: { message?: string }; message?: string };
@@ -78,6 +80,16 @@ export default function Profile(): JSX.Element {
               <p className="mt-3 text-sm leading-6 text-slate-600">
                 Manage your public profile, verify your account, and keep your listings current.
               </p>
+              {profile?.is_public && (
+                <div className="mt-4">
+                  <Link
+                    to={`/users/${profile.id}`}
+                    className="inline-flex items-center justify-center rounded-2xl border border-teal-950 bg-teal-950/10 px-4 py-2 text-sm font-semibold text-teal-950 transition hover:bg-teal-50"
+                  >
+                    View public profile
+                  </Link>
+                </div>
+              )}
             </div>
 
             {isLoading && (

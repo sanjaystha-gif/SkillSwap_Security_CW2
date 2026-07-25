@@ -6,13 +6,38 @@ const REFRESH_EXPIRES = process.env.REFRESH_TOKEN_EXPIRES || '30d';
 
 const useRS = Boolean(process.env.JWT_PRIVATE_KEY && process.env.JWT_PUBLIC_KEY);
 
+function parseKey(value) {
+  if (!value) return undefined;
+
+  let key = value;
+
+  // Some environments store PEM keys as base64 content rather than raw multiline text.
+  // Detect that form and decode it to a proper PEM string.
+  if (/^LS0tLS[\w\d+/=\r\n]+$/.test(key)) {
+    try {
+      const decoded = Buffer.from(key, 'base64').toString('utf8');
+      if (decoded.includes('-----BEGIN')) {
+        key = decoded;
+      }
+    } catch {
+      // Keep the original value if decode fails.
+    }
+  }
+
+  if (key.includes('\\n')) {
+    key = key.replace(/\\n/g, '\n');
+  }
+
+  return key;
+}
+
 function getPrivateKey() {
-  if (useRS) return process.env.JWT_PRIVATE_KEY.replace(/\\n/g, '\n');
+  if (useRS) return parseKey(process.env.JWT_PRIVATE_KEY);
   return process.env.JWT_SECRET;
 }
 
 function getPublicKey() {
-  if (useRS) return process.env.JWT_PUBLIC_KEY.replace(/\\n/g, '\n');
+  if (useRS) return parseKey(process.env.JWT_PUBLIC_KEY);
   return process.env.JWT_SECRET;
 }
 

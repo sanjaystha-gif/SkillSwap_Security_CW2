@@ -21,9 +21,20 @@ const PORT = process.env.API_PORT || 5001;
 
 // Security middleware
 app.use(helmet());
+
+const allowedCorsOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173,http://localhost:5174,http://localhost:5175')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+    origin: (origin, callback) => {
+      if (!origin || allowedCorsOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error(`CORS origin not allowed: ${origin}`));
+    },
     credentials: true,
   }),
 );
@@ -65,6 +76,7 @@ app.use('/api/v1/admin', adminRoutes);
 
 // Error handling middleware - format AppError instances to the standard envelope
 app.use((err, req, res, next) => {
+  void next;
   // If it's an AppError, send its JSON structure
   if (err instanceof AppError) {
     return res.status(err.status).json(err.toJSON());
@@ -76,6 +88,15 @@ app.use((err, req, res, next) => {
   return res.status(internal.status).json(internal.toJSON());
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   logger.info({ port: PORT }, 'SkillSwap API listening');
+});
+
+server.on('error', (error) => {
+  if (error.code === 'EADDRINUSE') {
+    logger.error({ port: PORT, error }, 'Port is already in use. Make sure no other SkillSwap backend instance is running.');
+    process.exit(1);
+  }
+  logger.error({ error }, 'Server failed to start');
+  process.exit(1);
 });

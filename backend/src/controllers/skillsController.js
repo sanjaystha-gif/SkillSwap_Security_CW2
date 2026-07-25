@@ -12,7 +12,9 @@ const createSkillSchema = z.object({
 
 export async function listSkills(req, res, next) {
   try {
-    const result = await pool.query('SELECT id, title, description, category, owner_id, is_active FROM skills WHERE is_active = true');
+    const result = await pool.query(
+      'SELECT id, name AS title, description, category, owner_id, is_active FROM skills WHERE is_active = true',
+    );
     res.json({ skills: result.rows });
   } catch (err) {
     next(err);
@@ -22,7 +24,10 @@ export async function listSkills(req, res, next) {
 export async function getSkill(req, res, next) {
   try {
     const { id } = req.params;
-    const result = await pool.query('SELECT id, title, description, category, owner_id, is_active FROM skills WHERE id = $1', [id]);
+    const result = await pool.query(
+      'SELECT id, name AS title, description, category, owner_id, is_active FROM skills WHERE id = $1',
+      [id],
+    );
     if (result.rows.length === 0) throw new NotFoundError('Skill not found');
     res.json({ skill: result.rows[0] });
   } catch (err) {
@@ -42,8 +47,8 @@ export async function createSkill(req, res, next) {
 
     const { title, description, category } = req.body;
     const result = await pool.query(
-      `INSERT INTO skills (title, description, category, owner_id, is_active)
-       VALUES ($1, $2, $3, $4, true) RETURNING id, title, description, category, owner_id`,
+      `INSERT INTO skills (name, description, category, owner_id, is_active)
+       VALUES ($1, $2, $3, $4, true) RETURNING id, name AS title, description, category, owner_id, is_active`,
       [title, description, category || null, req.user.uid],
     );
 
@@ -76,7 +81,7 @@ export async function updateSkill(req, res, next) {
     const fields = [];
     const values = [];
     let idx = 1;
-    if (req.body.title) { fields.push(`title = $${idx++}`); values.push(req.body.title); }
+    if (req.body.title) { fields.push(`name = $${idx++}`); values.push(req.body.title); }
     if (req.body.description) { fields.push(`description = $${idx++}`); values.push(req.body.description); }
     if (req.body.category !== undefined) { fields.push(`category = $${idx++}`); values.push(req.body.category); }
     if (req.body.is_active !== undefined) { fields.push(`is_active = $${idx++}`); values.push(req.body.is_active); }

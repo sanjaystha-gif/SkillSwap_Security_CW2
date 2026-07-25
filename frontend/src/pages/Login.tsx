@@ -36,8 +36,8 @@ export default function Login(): JSX.Element {
 
   return (
     <main className="mx-auto flex min-h-[calc(100vh-5rem)] max-w-6xl items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
-      <div className="grid w-full max-w-5xl overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.08)] lg:grid-cols-[0.95fr_1.05fr]">
-        <div className="bg-[linear-gradient(135deg,_#083f3b,_#0f766e)] p-8 text-white sm:p-10 lg:p-12">
+      <div className="grid w-full max-w-5xl rounded-[2rem] border border-slate-200 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.08)] lg:grid-cols-[0.95fr_1.05fr]">
+        <div className="bg-[linear-gradient(135deg,_#083f3b,_#0f766e)] p-8 text-white sm:p-10 lg:p-12 overflow-y-auto max-h-[80vh]">
           <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-sm font-medium text-teal-50">
             <LockKeyhole className="h-4 w-4" />
             Secure access
@@ -56,7 +56,7 @@ export default function Login(): JSX.Element {
           </div>
         </div>
 
-        <div className="p-8 sm:p-10 lg:p-12">
+        <div className="p-8 sm:p-10 lg:p-12 overflow-y-auto max-h-[80vh]">
           <p className="text-sm font-semibold uppercase tracking-[0.24em] text-teal-700">Sign in</p>
           <h2 className="mt-3 text-3xl font-semibold text-slate-950">Continue your exchange</h2>
           <p className="mt-3 text-sm leading-7 text-slate-600">

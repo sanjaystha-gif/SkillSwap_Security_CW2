@@ -1,10 +1,10 @@
 import { z } from 'zod';
+import crypto from 'crypto';
 import pool from '../config/database.js';
 import { hashPassword, comparePassword, validatePasswordPolicy } from '../utils/password.js';
 import {
   ValidationError,
   ConflictError,
-  NotFoundError,
   UnauthorizedError,
 } from '../utils/errors.js';
 import {
@@ -13,6 +13,11 @@ import {
   verifyRefreshToken,
 } from '../utils/jwt.js';
 import { logAudit } from '../utils/audit.js';
+
+// Helper: hash refresh token for storage
+function hashRefreshToken(token) {
+  return crypto.createHash('sha256').update(token).digest('hex');
+}
 
 // Helper: parse simple cookie header into object
 function parseCookies(req) {
@@ -222,18 +227,23 @@ export async function login(req, res, next) {
       // Create a server-side session and issue tokens
       const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
       const userAgent = req.get('User-Agent') || null;
+      const userAgentHash = userAgent ? crypto.createHash('sha256').update(userAgent).digest('hex') : null;
       const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.connection?.remoteAddress || null;
 
+      const accessToken = signAccessToken({ sub: user.id, uid: user.id, role: user.role });
+      const refreshToken = signRefreshToken({ sid: 'temp', uid: user.id });
+      const refreshTokenHash = hashRefreshToken(refreshToken);
+
       const sessionInsert = await pool.query(
-        `INSERT INTO sessions (user_id, user_agent, ip_address, expires_at)
-         VALUES ($1, $2, $3, $4) RETURNING id, expires_at`,
-        [user.id, userAgent, ipAddress, expiresAt.toISOString()],
+        `INSERT INTO sessions (user_id, refresh_token_hash, user_agent_hash, ip_address, expires_at)
+         VALUES ($1, $2, $3, $4, $5) RETURNING id, expires_at`,
+        [user.id, refreshTokenHash, userAgentHash, ipAddress, expiresAt.toISOString()],
       );
 
       const session = sessionInsert.rows[0];
 
-      const accessToken = signAccessToken({ sub: user.id, uid: user.id, role: user.role });
-      const refreshToken = signRefreshToken({ sid: session.id, uid: user.id });
+      // Re-sign refresh token with actual session ID
+      const refreshTokenFinal = signRefreshToken({ sid: session.id, uid: user.id });
 
       await logAudit({
         actor_id: user.id,
@@ -247,7 +257,7 @@ export async function login(req, res, next) {
 
       // Set HTTP-only refresh cookie (scoped to auth routes)
       const secure = process.env.NODE_ENV === 'production';
-      res.cookie('refresh_token', refreshToken, {
+      res.cookie('refresh_token', refreshTokenFinal, {
         httpOnly: true,
         secure,
         sameSite: 'lax',
@@ -315,7 +325,7 @@ export async function logout(req, res, next) {
 
     const sid = payload?.sid;
     if (sid) {
-      await pool.query('UPDATE sessions SET revoked = true, updated_at = NOW() WHERE id = $1', [sid]);
+      await pool.query('UPDATE sessions SET revoked_at = NOW() WHERE id = $1', [sid]);
       await logAudit({
         actor_id: payload?.uid || null,
         actor_role: 'user',
@@ -354,34 +364,39 @@ export async function refreshToken(req, res, next) {
     if (!sid) throw new UnauthorizedError('Invalid refresh token (missing session)');
 
     // Verify session exists, not revoked, and not expired
-    const sessionRes = await pool.query('SELECT id, user_id, revoked, expires_at FROM sessions WHERE id = $1', [sid]);
+    const sessionRes = await pool.query('SELECT id, user_id, revoked_at, expires_at FROM sessions WHERE id = $1', [sid]);
     if (sessionRes.rows.length === 0) throw new UnauthorizedError('Session not found');
 
     const session = sessionRes.rows[0];
-    if (session.revoked) throw new UnauthorizedError('Session revoked');
+    if (session.revoked_at) throw new UnauthorizedError('Session revoked');
     if (new Date(session.expires_at) < new Date()) throw new UnauthorizedError('Session expired');
 
     // Rotate: create a new session and revoke the old one
     const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
     const userAgent = req.get('User-Agent') || null;
+    const userAgentHash = userAgent ? crypto.createHash('sha256').update(userAgent).digest('hex') : null;
     const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.connection?.remoteAddress || null;
 
+    const newAccessToken = signAccessToken({ sub: session.user_id, uid: session.user_id, role: 'member' });
+    const newRefreshToken = signRefreshToken({ sid: 'temp', uid: session.user_id });
+    const newRefreshTokenHash = hashRefreshToken(newRefreshToken);
+
     const newSessionRes = await pool.query(
-      `INSERT INTO sessions (user_id, user_agent, ip_address, expires_at)
-       VALUES ($1, $2, $3, $4) RETURNING id, expires_at`,
-      [session.user_id, userAgent, ipAddress, expiresAt.toISOString()],
+      `INSERT INTO sessions (user_id, refresh_token_hash, user_agent_hash, ip_address, expires_at)
+       VALUES ($1, $2, $3, $4, $5) RETURNING id, expires_at`,
+      [session.user_id, newRefreshTokenHash, userAgentHash, ipAddress, expiresAt.toISOString()],
     );
 
     const newSession = newSessionRes.rows[0];
 
+    // Re-sign refresh token with actual session ID
+    const newRefreshTokenFinal = signRefreshToken({ sid: newSession.id, uid: session.user_id });
+
     // Revoke old session
-    await pool.query('UPDATE sessions SET revoked = true, updated_at = NOW() WHERE id = $1', [session.id]);
+    await pool.query('UPDATE sessions SET revoked_at = NOW() WHERE id = $1', [session.id]);
 
     const profile = await pool.query('SELECT role FROM users WHERE id = $1', [session.user_id]);
     const role = profile.rows[0]?.role || 'member';
-
-    const accessToken = signAccessToken({ sub: session.user_id, uid: session.user_id, role });
-    const refreshToken = signRefreshToken({ sid: newSession.id, uid: session.user_id });
 
     await logAudit({
       actor_id: session.user_id,
@@ -394,7 +409,7 @@ export async function refreshToken(req, res, next) {
 
     // Set HTTP-only cookie for rotated refresh token
     const secure = process.env.NODE_ENV === 'production';
-    res.cookie('refresh_token', refreshToken, {
+    res.cookie('refresh_token', newRefreshTokenFinal, {
       httpOnly: true,
       secure,
       sameSite: 'lax',
@@ -403,7 +418,7 @@ export async function refreshToken(req, res, next) {
     });
 
     res.json({
-      access_token: accessToken,
+      access_token: newAccessToken,
       expires_at: newSession.expires_at,
     });
   } catch (error) {

@@ -1,7 +1,7 @@
 import pool from '../config/database.js';
 import { z } from 'zod';
 import { logAudit } from '../utils/audit.js';
-import { ValidationError, NotFoundError } from '../utils/errors.js';
+import { NotFoundError } from '../utils/errors.js';
 
 const updateStatusSchema = z.object({
   status: z.enum(['active', 'suspended', 'banned', 'deleted']),

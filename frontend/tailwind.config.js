@@ -3,7 +3,17 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        teal: '#0F766E',
+        // Provide a small teal scale so utility classes like
+        // `bg-teal-950` / `text-teal-700` resolve correctly.
+        teal: {
+          50: '#E1F5F2',
+          100: '#D7F0EC',
+          300: '#8EE0D7',
+          500: '#14B8A6',
+          700: '#0F766E',
+          900: '#0B5A54',
+          950: '#083F3B',
+        },
         'teal-dark': '#0B5A54',
         'teal-darker': '#083F3B',
         'teal-soft': '#E1F5F2',

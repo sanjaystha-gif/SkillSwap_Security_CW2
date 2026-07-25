@@ -6,6 +6,19 @@ dotenv.config();
 const { Pool } = pg;
 const port = process.env.DB_PORT ? Number(process.env.DB_PORT) : 5432;
 
+// Fail fast when required DB config is missing
+const missingDbVars = [];
+if (!process.env.DB_HOST) missingDbVars.push('DB_HOST');
+if (!process.env.DB_NAME) missingDbVars.push('DB_NAME');
+if (!process.env.DB_USER) missingDbVars.push('DB_USER');
+
+if (missingDbVars.length > 0) {
+  throw new Error(
+    `Missing required database environment variables: ${missingDbVars.join(', ')}. ` +
+      'Set them in your environment or backend/.env before starting the app.',
+  );
+}
+
 // Validate environment values to avoid confusing pg errors
 const rawPassword = process.env.DB_PASSWORD;
 if (rawPassword !== undefined && typeof rawPassword !== 'string') {

@@ -50,7 +50,7 @@ export default function Register(): JSX.Element {
   return (
     <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
       <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
-        <section className="rounded-[2rem] border border-slate-200 bg-slate-950 p-8 text-white shadow-sm sm:p-10">
+        <section className="rounded-[2rem] border border-slate-200 bg-slate-950 p-8 text-white shadow-sm sm:p-10 overflow-y-auto max-h-[80vh]">
           <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-sm font-semibold uppercase tracking-[0.24em] text-teal-100">
             <ShieldCheck className="h-4 w-4" />
             Secure sign-up
@@ -76,7 +76,7 @@ export default function Register(): JSX.Element {
           </div>
         </section>
 
-        <section className="rounded-[2rem] border border-slate-200 bg-white p-8 shadow-sm sm:p-10">
+        <section className="rounded-[2rem] border border-slate-200 bg-white p-8 shadow-sm sm:p-10 overflow-y-auto max-h-[80vh]">
           <h2 className="text-2xl font-semibold text-slate-950">Create your account</h2>
           <p className="mt-2 text-sm text-slate-600">Start sharing skills with the community.</p>
 
