@@ -6,6 +6,7 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 export default function Button({
+  type = 'button',
   variant = 'primary',
   loading = false,
   className = '',
