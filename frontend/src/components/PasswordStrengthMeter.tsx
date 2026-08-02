@@ -19,15 +19,15 @@ export default function PasswordStrengthMeter({ password }: PasswordStrengthMete
   }, [password]);
 
   const labels = ['', 'Very weak', 'Weak', 'Fair', 'Good', 'Strong'];
-  const colors = ['', 'bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-lime-500', 'bg-green-500'];
+  const barStyles = ['bg-stone-200', 'bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-lime-500', 'bg-green-500'];
 
   return (
-    <div className="mt-2">
+    <div className="mt-2" role="status" aria-live="polite">
       <div className="flex gap-1 mb-1">
         {[1, 2, 3, 4, 5].map((i) => (
           <div
             key={i}
-            className={`h-1 flex-1 rounded ${i <= strength ? colors[strength] : 'bg-stone-200'}`}
+            className={`h-1 flex-1 rounded ${i <= strength ? barStyles[i] : 'bg-stone-200'}`}
           />
         ))}
       </div>
