@@ -216,7 +216,8 @@ export default function Credits(): JSX.Element {
                     <div>
                       <button
                         type="button"
-                        className="rounded-md bg-rose-600 px-3 py-1 text-sm text-white"
+                        disabled={releaseMutation.isLoading}
+                        className="rounded-md bg-rose-600 px-3 py-1 text-sm text-white disabled:cursor-not-allowed disabled:opacity-60"
                         onClick={() => releaseMutation.mutate(h.id)}
                       >
                         Release
