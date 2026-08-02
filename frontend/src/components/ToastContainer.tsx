@@ -49,17 +49,21 @@ export default function ToastContainer(): JSX.Element {
   };
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-3">
+    <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-3" aria-live="polite" role="status">
       {toasts.map((toast) => (
         <div
           key={toast.id}
           className={`flex items-center gap-3 rounded-2xl border px-4 py-3 shadow-lg ${getBgColor(toast.type)}`}
         >
-          <span className={`text-xl font-bold ${getTextColor(toast.type)}`}>{getIcon(toast.type)}</span>
+          <span className={`text-xl font-bold ${getTextColor(toast.type)}`} aria-hidden="true">
+            {getIcon(toast.type)}
+          </span>
           <p className={`text-sm font-medium ${getTextColor(toast.type)}`}>{toast.message}</p>
           <button
+            type="button"
             onClick={() => removeToast(toast.id)}
             className={`ml-2 text-lg font-bold transition hover:opacity-70 ${getTextColor(toast.type)}`}
+            aria-label="Dismiss notification"
           >
             ✕
           </button>
