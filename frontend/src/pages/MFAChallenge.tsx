@@ -1,73 +1,95 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, type FormEvent, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import Button from '../components/Button';
+import { Button } from '../components';
 
-export default function MFAChallenge() {
+export default function MFAChallenge(): JSX.Element {
   const navigate = useNavigate();
-  const { mfaChallengeToken } = useAuth();
+  const { mfaChallengeToken, verifyMfa } = useAuth();
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const [attempts, setAttempts] = useState(0);
   const [loading, setLoading] = useState(false);
 
-  if (!mfaChallengeToken) {
-    navigate('/login');
-    return null;
-  }
+  useEffect(() => {
+    if (!mfaChallengeToken) {
+      navigate('/login');
+    }
+  }, [mfaChallengeToken, navigate]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
     if (attempts >= 5) {
-      setError('Too many attempts. Go back to login.');
+      setError('Too many attempts. Return to login and try again.');
       setLoading(false);
       return;
     }
 
     try {
-      const res = await fetch('/api/v1/auth/mfa/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ challenge_token: mfaChallengeToken, code }),
-        credentials: 'include',
-      });
-
-      if (res.ok) {
-        navigate('/dashboard');
-      } else {
-        setAttempts(attempts + 1);
-        setError('Invalid code. Try again.');
-        setCode('');
+      if (!mfaChallengeToken) {
+        setError('Missing MFA challenge. Please sign in again.');
+        return;
       }
-    } catch (err) {
-      setError('Error verifying code');
+
+      await verifyMfa(mfaChallengeToken, code);
+      navigate('/', { replace: true });
+    } catch {
+      setError('Unable to verify the code. Please try again.');
+      setAttempts((value) => value + 1);
+      setCode('');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-surf">
-      <div className="max-w-sm w-full px-4">
-        <h1 className="text-2xl font-bold text-ink mb-4">Enter your code</h1>
-        <form onSubmit={handleSubmit} className="space-y-4">
+    <main className="min-h-screen flex items-center justify-center bg-slate-50 px-4 py-12">
+      <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+        <div className="mb-6 text-center">
+          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-teal-700">Multi-factor authentication</p>
+          <h1 className="mt-4 text-3xl font-semibold text-slate-950">Enter your verification code</h1>
+          <p className="mt-2 text-sm text-slate-600">
+            Use a 6-digit authenticator code or a backup code (for example, ABCD-EFGH).
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+          <label htmlFor="mfa-code" className="block text-sm font-medium text-slate-900">
+            Verification or backup code
+          </label>
           <input
+            id="mfa-code"
             type="text"
-            maxLength={6}
-            placeholder="000000"
+            autoComplete="one-time-code"
+            inputMode="text"
+            maxLength={9}
+            placeholder="000000 or ABCD-EFGH"
             value={code}
-            onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-            className="w-full px-4 py-2 border border-line rounded text-center text-2xl tracking-widest"
+            onChange={(e) => {
+              const normalized = e.target.value
+                .toUpperCase()
+                .replace(/[^A-Z0-9-]/g, '')
+                .replace(/-{2,}/g, '-');
+              setCode(normalized);
+            }}
+            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-center text-xl tracking-[0.22em] text-slate-950 outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
             aria-label="MFA code"
           />
-          {error && <p className="text-red-500 text-sm">{error}</p>}
+          {error && <p className="text-sm text-red-600">{error}</p>}
+          <div className="flex items-center justify-between text-xs text-slate-500">
+            <span>{attempts} / 5 attempts used</span>
+            <Link to="/login" className="text-teal-950 font-semibold hover:text-teal-700">
+              Back to login
+            </Link>
+          </div>
           <Button type="submit" loading={loading} className="w-full">
-            Verify
+            Verify code
           </Button>
         </form>
       </div>
-    </div>
+    </main>
   );
 }
