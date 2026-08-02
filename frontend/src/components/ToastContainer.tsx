@@ -53,12 +53,12 @@ export default function ToastContainer(): JSX.Element {
       {toasts.map((toast) => (
         <div
           key={toast.id}
-          className={`flex items-center gap-3 rounded-2xl border px-4 py-3 shadow-lg ${getBgColor(toast.type)}`}
+          className={`flex max-w-xs items-center gap-3 rounded-2xl border px-4 py-3 shadow-lg ${getBgColor(toast.type)}`}
         >
           <span className={`text-xl font-bold ${getTextColor(toast.type)}`} aria-hidden="true">
             {getIcon(toast.type)}
           </span>
-          <p className={`text-sm font-medium ${getTextColor(toast.type)}`}>{toast.message}</p>
+          <p className={`max-w-[16rem] break-words text-sm font-medium ${getTextColor(toast.type)}`}>{toast.message}</p>
           <button
             type="button"
             onClick={() => removeToast(toast.id)}
