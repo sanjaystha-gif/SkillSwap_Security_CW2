@@ -1,14 +1,20 @@
-import { useEffect, useState } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import Button from '../components/Button';
+import { useEffect, useRef, useState } from 'react';
+import { useSearchParams, useNavigate, Link } from 'react-router-dom';
+import { Button } from '../components';
+import { verifyEmailToken } from '../services/authService';
 
-export default function VerifyEmail() {
+export default function VerifyEmail(): JSX.Element {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [status, setStatus] = useState<'loading' | 'success' | 'expired' | 'error'>('loading');
-  const [email, setEmail] = useState('');
+  const hasVerifiedRef = useRef(false);
 
   useEffect(() => {
+    if (hasVerifiedRef.current) {
+      return;
+    }
+    hasVerifiedRef.current = true;
+
     const token = searchParams.get('token');
     if (!token) {
       setStatus('error');
@@ -17,21 +23,15 @@ export default function VerifyEmail() {
 
     const verify = async () => {
       try {
-        const res = await fetch('/api/v1/auth/verify-email', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token }),
-        });
-
-        if (res.ok) {
-          setStatus('success');
-        } else if (res.status === 410) {
+        await verifyEmailToken(token);
+        setStatus('success');
+      } catch (err) {
+        const apiError = err as { status?: number };
+        if (apiError.status === 410) {
           setStatus('expired');
         } else {
           setStatus('error');
         }
-      } catch {
-        setStatus('error');
       }
     };
 
@@ -39,45 +39,59 @@ export default function VerifyEmail() {
   }, [searchParams]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-surf">
-      <div className="max-w-sm w-full px-4 text-center">
+    <main className="min-h-screen flex items-center justify-center bg-slate-50 px-4 py-12">
+      <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 shadow-sm text-center" aria-live="polite" role="status">
         {status === 'loading' && (
-          <p className="text-ink2">Verifying email...</p>
-        )}
-        {status === 'success' && (
           <>
-            <h1 className="text-2xl font-bold text-ink mb-4">Email verified</h1>
-            <p className="text-ink2 mb-6">Your account is ready. Log in to continue.</p>
-            <Button onClick={() => navigate('/login')} className="w-full">
-              Go to login
-            </Button>
+            <p className="text-sm text-slate-600">Verifying your email address...</p>
           </>
         )}
-        {status === 'expired' && (
+
+        {status === 'success' && (
           <>
-            <h1 className="text-2xl font-bold text-red-500 mb-4">Link expired</h1>
-            <p className="text-ink2 mb-6">Request a new verification email.</p>
-            <div className="space-y-2">
-              <input
-                type="email"
-                placeholder="your@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-2 border border-line rounded"
-              />
-              <Button className="w-full">Resend verification</Button>
+            <h1 className="text-3xl font-semibold text-slate-950">Email verified</h1>
+            <p className="mt-4 text-sm leading-6 text-slate-600">
+              Your account is fully verified and ready to use.
+            </p>
+            <div className="mt-8">
+              <Button onClick={() => navigate('/login')} className="w-full">
+                Go to login
+              </Button>
             </div>
           </>
         )}
+
+        {status === 'expired' && (
+          <>
+            <h1 className="text-3xl font-semibold text-rose-600">Link expired</h1>
+            <p className="mt-4 text-sm leading-6 text-slate-600">
+              This verification link is no longer valid. Request a new link from the login page.
+            </p>
+            <div className="mt-8 space-y-3">
+              <Button onClick={() => navigate('/login')} className="w-full">
+                Back to login
+              </Button>
+              <Link to="/register" className="inline-flex w-full items-center justify-center rounded-2xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-slate-50">
+                Create a new account
+              </Link>
+            </div>
+          </>
+        )}
+
         {status === 'error' && (
           <>
-            <h1 className="text-2xl font-bold text-red-500 mb-4">Verification failed</h1>
-            <Button onClick={() => navigate('/login')} className="w-full">
-              Back to login
-            </Button>
+            <h1 className="text-3xl font-semibold text-rose-600">Verification failed</h1>
+            <p className="mt-4 text-sm leading-6 text-slate-600">
+              We could not verify your email. Try again from the login page.
+            </p>
+            <div className="mt-8">
+              <Button onClick={() => navigate('/login')} className="w-full">
+                Back to login
+              </Button>
+            </div>
           </>
         )}
       </div>
-    </div>
+    </main>
   );
 }
