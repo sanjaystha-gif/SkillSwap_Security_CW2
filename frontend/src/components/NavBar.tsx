@@ -42,7 +42,9 @@ export default function NavBar(): JSX.Element {
                 }`
               }
             >
-              {item.label}
+              {({ isActive }) => (
+                <span aria-current={isActive ? 'page' : undefined}>{item.label}</span>
+              )}
             </NavLink>
           ))}
 
@@ -88,7 +90,9 @@ export default function NavBar(): JSX.Element {
                   }`
                 }
               >
-                {item.label}
+                {({ isActive }) => (
+                  <span aria-current={isActive ? 'page' : undefined}>{item.label}</span>
+                )}
               </NavLink>
             ))}
             {!isAuthenticated ? (
