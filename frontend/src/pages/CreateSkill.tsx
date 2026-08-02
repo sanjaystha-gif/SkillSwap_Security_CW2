@@ -3,6 +3,7 @@ import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { submitNewSkill } from '../usecases/skillsUseCases';
 
 const schema = z.object({
@@ -35,12 +36,14 @@ export default function CreateSkill(): JSX.Element {
   const [success, setSuccess] = useState<string | null>(null);
   const navigate = useNavigate();
 
+  const auth = useAuth();
+
   const onSubmit: SubmitHandler<SkillFormValues> = async (values) => {
     setServerError(null);
     setSuccess(null);
 
     try {
-      await submitNewSkill(values);
+      await submitNewSkill(values, auth.accessToken ?? undefined);
       setSuccess('Skill posted successfully. Redirecting to skills page...');
       reset();
       setTimeout(() => {
@@ -53,14 +56,28 @@ export default function CreateSkill(): JSX.Element {
   };
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
-      <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm sm:p-12">
-        <h1 className="text-3xl font-semibold text-slate-950">Post a new skill</h1>
-        <p className="mt-4 text-sm leading-6 text-slate-600">
-          Share a new skill offering and let others discover what you can teach.
-        </p>
+    <main className="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
+      <section className="grid gap-8 lg:grid-cols-[0.95fr_0.8fr]">
+        <div className="rounded-[1.75rem] border border-slate-200 bg-white p-8 shadow-sm sm:p-10">
+          <div className="flex flex-col gap-4">
+            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-teal-700">Create listing</p>
+            <h1 className="text-3xl font-semibold text-slate-950">Post a new skill</h1>
+            <p className="max-w-2xl text-sm leading-6 text-slate-600">
+              Share a new skill offering and let others discover what you can teach.
+            </p>
+            <div className="rounded-[1.5rem] bg-slate-50 p-5 text-sm text-slate-600">
+              <p className="font-semibold text-slate-950">Pro tip</p>
+              <ul className="mt-3 space-y-2">
+                <li>• Keep the title concise and outcome-focused.</li>
+                <li>• Describe what attendees will learn or achieve.</li>
+                <li>• Set a credit cost that reflects the session effort.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
+        <div className="rounded-[1.75rem] border border-slate-200 bg-white p-8 shadow-sm sm:p-10">
+          <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
           <div>
             <label className="block text-sm font-medium text-slate-700">Title</label>
             <input
@@ -95,6 +112,8 @@ export default function CreateSkill(): JSX.Element {
             <label className="block text-sm font-medium text-slate-700">Credit cost</label>
             <input
               type="number"
+              inputMode="numeric"
+              pattern="[0-9]*"
               {...register('credit_cost')}
               min={0}
               step={1}
@@ -106,17 +125,18 @@ export default function CreateSkill(): JSX.Element {
           </div>
 
           {serverError && <p className="text-sm text-red-600">{serverError}</p>}
-          {success && <p className="text-sm text-green-600">{success}</p>}
+          {success && <p className="text-sm text-emerald-600">{success}</p>}
 
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full rounded-2xl bg-teal-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-teal-900 disabled:cursor-not-allowed disabled:opacity-50"
+            className="w-full rounded-full bg-teal-950 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-teal-950/10 transition hover:bg-teal-900 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isSubmitting ? 'Posting…' : 'Post skill'}
           </button>
         </form>
-      </section>
-    </main>
+      </div>
+    </section>
+  </main>
   );
 }
