@@ -26,7 +26,11 @@ export default function Login(): JSX.Element {
   const onSubmit: SubmitHandler<LoginFormValues> = async (values) => {
     setServerError(null);
     try {
-      await auth.login(values.email, values.password);
+      const response = await auth.login(values.email, values.password);
+      if (response.mfa_required) {
+        navigate('/login/mfa', { replace: true });
+        return;
+      }
       navigate(from, { replace: true });
     } catch (error) {
       const apiError = error as { payload?: { message?: string }; message?: string };
@@ -36,9 +40,9 @@ export default function Login(): JSX.Element {
 
   return (
     <main className="mx-auto flex min-h-[calc(100vh-5rem)] max-w-6xl items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
-      <div className="grid w-full max-w-5xl rounded-[2rem] border border-slate-200 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.08)] lg:grid-cols-[0.95fr_1.05fr]">
-        <div className="bg-[linear-gradient(135deg,_#083f3b,_#0f766e)] p-8 text-white sm:p-10 lg:p-12 overflow-y-auto max-h-[80vh]">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-sm font-medium text-teal-50">
+      <div className="grid w-full max-w-5xl overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_32px_120px_rgba(15,23,42,0.12)] lg:grid-cols-[0.95fr_1.05fr]">
+        <div className="bg-[radial-gradient(circle_at_top_left,_rgba(15,118,110,0.35),_transparent_40%),linear-gradient(135deg,_#083f3b,_#0f766e)] p-8 text-white sm:p-10 lg:p-12 overflow-y-auto max-h-[80vh]">
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold tracking-[0.18em] text-teal-50">
             <LockKeyhole className="h-4 w-4" />
             Secure access
           </div>
@@ -57,11 +61,13 @@ export default function Login(): JSX.Element {
         </div>
 
         <div className="p-8 sm:p-10 lg:p-12 overflow-y-auto max-h-[80vh]">
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-teal-700">Sign in</p>
-          <h2 className="mt-3 text-3xl font-semibold text-slate-950">Continue your exchange</h2>
-          <p className="mt-3 text-sm leading-7 text-slate-600">
-            Use your email and password to enter your account and pick up your next session.
-          </p>
+          <div className="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-8 shadow-sm">
+            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-teal-700">Sign in</p>
+            <h2 className="mt-3 text-3xl font-semibold text-slate-950">Continue your exchange</h2>
+            <p className="mt-3 text-sm leading-7 text-slate-600">
+              Use your email and password to enter your account and pick up your next session.
+            </p>
+          </div>
 
           <form className="mt-8 space-y-5" onSubmit={handleSubmit(onSubmit)}>
             <label className="block">
@@ -71,6 +77,7 @@ export default function Login(): JSX.Element {
               </span>
               <input
                 type="email"
+                autoComplete="email"
                 {...register('email')}
                 className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-teal-700 focus:bg-white"
               />
@@ -85,6 +92,7 @@ export default function Login(): JSX.Element {
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
+                  autoComplete="current-password"
                   {...register('password')}
                   className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 pr-12 text-sm text-slate-900 outline-none transition focus:border-teal-700 focus:bg-white"
                 />
@@ -109,18 +117,23 @@ export default function Login(): JSX.Element {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full rounded-2xl bg-teal-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-teal-900 disabled:cursor-not-allowed disabled:opacity-50"
+              className="w-full rounded-full bg-teal-950 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-teal-950/10 transition hover:bg-teal-900 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isSubmitting ? 'Signing in…' : 'Sign in'}
             </button>
           </form>
 
-          <p className="mt-8 text-center text-sm text-slate-600">
-            New to SkillSwap?{' '}
-            <Link to="/register" className="font-semibold text-teal-700 hover:text-teal-900">
-              Create an account
+          <div className="mt-6 flex flex-col items-center justify-between gap-3 text-sm text-slate-600 sm:flex-row">
+            <p>
+              New to SkillSwap?{' '}
+              <Link to="/register" className="font-semibold text-teal-700 hover:text-teal-900">
+                Create an account
+              </Link>
+            </p>
+            <Link to="/forgot-password" className="font-semibold text-teal-700 hover:text-teal-900">
+              Forgot password?
             </Link>
-          </p>
+          </div>
         </div>
       </div>
     </main>
