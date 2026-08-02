@@ -236,7 +236,11 @@ export default function Skills(): JSX.Element {
 
       <section className="mt-8 space-y-4">
         {!isLoading && !isError && (
-          <div className="rounded-3xl border border-slate-200 bg-slate-50 px-5 py-4 text-sm text-slate-700 shadow-sm">
+          <div
+            className="rounded-3xl border border-slate-200 bg-slate-50 px-5 py-4 text-sm text-slate-700 shadow-sm"
+            role="status"
+            aria-live="polite"
+          >
             Showing {sortedSkills.length} of {skillItems.length} skill{skillItems.length === 1 ? '' : 's'} in the marketplace.
           </div>
         )}
