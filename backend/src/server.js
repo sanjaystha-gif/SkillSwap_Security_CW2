@@ -22,9 +22,14 @@ dotenv.config();
 const app = express();
 const PORT = process.env.API_PORT || 5001;
 
+app.disable('x-powered-by');
 app.set('trust proxy', 1);
 app.use(helmet());
 app.use(helmet.referrerPolicy({ policy: 'same-origin' }));
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  next();
+});
 
 const allowedCorsOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176')
   .split(',')
