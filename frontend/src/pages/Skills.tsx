@@ -227,6 +227,7 @@ export default function Skills(): JSX.Element {
               setSortOption('default');
             }}
             className="mt-5 text-sm font-semibold text-teal-700 transition hover:text-teal-900"
+            aria-label="Clear all filters"
           >
             Clear filters
           </button>
@@ -235,8 +236,8 @@ export default function Skills(): JSX.Element {
 
       <section className="mt-8 space-y-4">
         {!isLoading && !isError && (
-          <div className="text-sm text-slate-600">
-            Showing {sortedSkills.length} of {skillItems.length} skill{skillItems.length === 1 ? '' : 's'}.
+          <div className="rounded-3xl border border-slate-200 bg-slate-50 px-5 py-4 text-sm text-slate-700 shadow-sm">
+            Showing {sortedSkills.length} of {skillItems.length} skill{skillItems.length === 1 ? '' : 's'} in the marketplace.
           </div>
         )}
 
@@ -278,18 +279,22 @@ export default function Skills(): JSX.Element {
                 <CreditChip value={skill.credit_cost ?? 0} />
               </div>
               <p className="mt-4 text-sm leading-7 text-slate-600">{skill.description}</p>
-              <div className="mt-6 flex flex-wrap items-center gap-2 text-sm font-medium text-slate-500">
-                <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                  {skill.is_active ? 'Active' : 'Inactive'}
-                </span>
-                <Link to={`/users/${skill.owner_id}`} className="text-teal-700 transition hover:text-teal-900">
-                  Provider profile
-                </Link>
-              </div>
-              <div className="mt-6 flex flex-wrap gap-3">
+              <div className="mt-6 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                <div className="flex flex-wrap items-center gap-2 text-sm font-medium text-slate-500">
+                  <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] ${skill.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                    {skill.is_active ? 'Active' : 'Inactive'}
+                  </span>
+                  {skill.owner_id ? (
+                    <Link to={`/users/${skill.owner_id}`} className="text-teal-700 transition hover:text-teal-900">
+                      Provider profile
+                    </Link>
+                  ) : (
+                    <span className="text-slate-500">Provider profile unavailable</span>
+                  )}
+                </div>
                 <Link
                   to={`/skills/${skill.id}`}
-                  className="inline-flex items-center rounded-full bg-teal-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-900"
+                  className="inline-flex items-center justify-center rounded-full bg-teal-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-teal-900"
                 >
                   View listing
                 </Link>
