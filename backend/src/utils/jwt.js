@@ -4,7 +4,9 @@ import crypto from 'crypto';
 const ACCESS_EXPIRES = process.env.ACCESS_TOKEN_EXPIRES || '15m';
 const REFRESH_EXPIRES = process.env.REFRESH_TOKEN_EXPIRES || '30d';
 
-const useRS = Boolean(process.env.JWT_PRIVATE_KEY && process.env.JWT_PUBLIC_KEY);
+function useRS() {
+  return Boolean(process.env.JWT_PRIVATE_KEY && process.env.JWT_PUBLIC_KEY);
+}
 
 function parseKey(value) {
   if (!value) return undefined;
@@ -32,18 +34,24 @@ function parseKey(value) {
 }
 
 function getPrivateKey() {
-  if (useRS) return parseKey(process.env.JWT_PRIVATE_KEY);
-  return process.env.JWT_SECRET;
+  const key = useRS() ? parseKey(process.env.JWT_PRIVATE_KEY) : process.env.JWT_SECRET;
+  if (!key) {
+    throw new Error('JWT signing key is missing. Set JWT_SECRET or JWT_PRIVATE_KEY/JWT_PUBLIC_KEY.');
+  }
+  return key;
 }
 
 function getPublicKey() {
-  if (useRS) return parseKey(process.env.JWT_PUBLIC_KEY);
-  return process.env.JWT_SECRET;
+  const key = useRS() ? parseKey(process.env.JWT_PUBLIC_KEY) : process.env.JWT_SECRET;
+  if (!key) {
+    throw new Error('JWT verification key is missing. Set JWT_SECRET or JWT_PRIVATE_KEY/JWT_PUBLIC_KEY.');
+  }
+  return key;
 }
 
 export function signAccessToken(payload) {
   return jwt.sign(payload, getPrivateKey(), {
-    algorithm: useRS ? 'RS256' : 'HS256',
+    algorithm: useRS() ? 'RS256' : 'HS256',
     expiresIn: ACCESS_EXPIRES,
   });
 }
@@ -51,7 +59,7 @@ export function signAccessToken(payload) {
 export function signRefreshToken(payload) {
   // Refresh tokens may be rotated; keep longer expiry
   return jwt.sign(payload, getPrivateKey(), {
-    algorithm: useRS ? 'RS256' : 'HS256',
+    algorithm: useRS() ? 'RS256' : 'HS256',
     expiresIn: REFRESH_EXPIRES,
   });
 }
