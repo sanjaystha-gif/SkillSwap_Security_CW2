@@ -38,6 +38,7 @@ export default async function rateLimiter(req, res, next) {
       console.error('Failed to log rate limit event', error);
     }
     const retrySeconds = Math.ceil((windowMs - (now - entry.firstRequestAt)) / 1000);
+    res.setHeader('Retry-After', retrySeconds.toString());
     return next(new RateLimitError(retrySeconds));
   }
 
