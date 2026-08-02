@@ -215,6 +215,7 @@ export default function Credits(): JSX.Element {
                     </div>
                     <div>
                       <button
+                        type="button"
                         className="rounded-md bg-rose-600 px-3 py-1 text-sm text-white"
                         onClick={() => releaseMutation.mutate(h.id)}
                       >
