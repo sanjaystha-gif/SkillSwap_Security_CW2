@@ -14,8 +14,10 @@ export default function SessionExpiredModal({ open }: SessionExpiredModalProps) 
   };
 
   return (
-    <Modal open={open} onClose={() => {}} title="Session ended">
-      <p className="text-ink2 mb-6">Your session expired. Log in again to continue.</p>
+    <Modal open={open} onClose={handleLogin} title="Session ended" descriptionId="session-expired-description">
+      <p id="session-expired-description" className="text-ink2 mb-6">
+        Your session expired. Log in again to continue.
+      </p>
       <Button onClick={handleLogin} className="w-full">
         Go to login
       </Button>
