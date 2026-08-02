@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import Button from '../components/Button';
+import { Button } from '../components';
+import { resetPasswordWithToken } from '../services/authService';
 
-export default function ResetPassword() {
+export default function ResetPassword(): JSX.Element {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [password, setPassword] = useState('');
@@ -13,11 +14,14 @@ export default function ResetPassword() {
 
   useEffect(() => {
     const t = searchParams.get('token');
-    if (!t) navigate('/forgot-password');
-    else setToken(t);
+    if (!t) {
+      navigate('/forgot-password');
+    } else {
+      setToken(t);
+    }
   }, [searchParams, navigate]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
 
@@ -28,51 +32,70 @@ export default function ResetPassword() {
 
     setLoading(true);
     try {
-      const res = await fetch('/api/v1/auth/reset-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, password }),
-      });
-
-      if (res.ok) {
-        navigate('/login');
-      } else {
-        setError('Reset failed. Token may have expired.');
-      }
-    } catch {
-      setError('Error resetting password');
+      await resetPasswordWithToken(token, password);
+      navigate('/login');
+    } catch (err) {
+      setError((err as Error).message || 'Error resetting password. Please try again.');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-surf">
-      <div className="max-w-sm w-full px-4">
-        <h1 className="text-2xl font-bold text-ink mb-4">New password</h1>
-        <p className="text-ink2 text-sm mb-6">This will sign you out everywhere else.</p>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            type="password"
-            placeholder="New password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-4 py-2 border border-line rounded"
-            required
-          />
-          <input
-            type="password"
-            placeholder="Confirm password"
-            value={confirm}
-            onChange={(e) => setConfirm(e.target.value)}
-            className="w-full px-4 py-2 border border-line rounded"
-            required
-          />
-          {error && <p className="text-red-500 text-sm">{error}</p>}
+    <main className="min-h-screen flex items-center justify-center bg-slate-50 px-4 py-12">
+      <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+        <div className="mb-6">
+          <h1 className="text-3xl font-semibold text-slate-950">Create a new password</h1>
+          <p className="mt-2 text-sm text-slate-600">This will update your account and sign you in securely.</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-slate-900">
+              New password
+            </label>
+            <input
+              id="password"
+              type="password"
+              autoComplete="new-password"
+              autoFocus
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-950 outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
+              placeholder="Enter your new password"
+              required
+            />
+          </div>
+
+          <div>
+            <label htmlFor="confirm" className="block text-sm font-medium text-slate-900">
+              Confirm password
+            </label>
+            <input
+              id="confirm"
+              type="password"
+              autoComplete="new-password"
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-950 outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
+              placeholder="Confirm your password"
+              required
+            />
+          </div>
+
+          {error && <p className="text-sm text-red-600">{error}</p>}
+
           <Button type="submit" loading={loading} className="w-full">
             Reset password
           </Button>
+
+          <div className="pt-4 text-center text-sm text-slate-600">
+            <button type="button" onClick={() => navigate('/login')} className="font-semibold text-teal-950 hover:text-teal-700">
+              Back to login
+            </button>
+          </div>
         </form>
       </div>
-    </div>
+    </main>
   );
 }
