@@ -19,13 +19,15 @@ export default function ConfirmDialog({
   loading = false,
 }: ConfirmDialogProps) {
   return (
-    <Modal open={open} onClose={onCancel} title={title}>
-      <p className="text-ink2 mb-6">{message}</p>
+    <Modal open={open} onClose={onCancel} title={title} descriptionId="confirm-dialog-description">
+      <p id="confirm-dialog-description" className="text-ink2 mb-6">
+        {message}
+      </p>
       <div className="flex gap-3 justify-end">
-        <Button variant="secondary" onClick={onCancel} disabled={loading}>
+        <Button type="button" variant="secondary" onClick={onCancel} disabled={loading}>
           Cancel
         </Button>
-        <Button variant="danger" onClick={onConfirm} loading={loading}>
+        <Button type="button" variant="danger" onClick={onConfirm} loading={loading}>
           Confirm
         </Button>
       </div>
