@@ -686,6 +686,7 @@ export async function issueCsrfToken(req, res, next) {
       maxAge: 2 * 60 * 60 * 1000,
     });
 
+    res.setHeader('Cache-Control', 'no-store');
     res.json({ csrf_token: csrfToken });
   } catch (error) {
     next(error);
