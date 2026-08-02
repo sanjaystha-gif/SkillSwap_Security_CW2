@@ -31,7 +31,17 @@ export default function Button({
         loading || disabled ? 'opacity-50 cursor-not-allowed' : ''
       }`}
     >
-      {loading ? 'Loading...' : children}
+      {loading ? (
+        <>
+          <span
+            className="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"
+            aria-hidden="true"
+          />
+          Loading...
+        </>
+      ) : (
+        children
+      )}
     </button>
   );
 }
