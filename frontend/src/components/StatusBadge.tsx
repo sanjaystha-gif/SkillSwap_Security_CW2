@@ -14,9 +14,15 @@ export default function StatusBadge({ status }: StatusBadgeProps) {
     pending: 'bg-blue-100 text-blue-900',
   };
 
+  const normalizedStatus = String(status).toLowerCase();
+  const label = normalizedStatus.charAt(0).toUpperCase() + normalizedStatus.slice(1);
+
   return (
-    <span className={`px-3 py-1 rounded-full text-sm font-medium ${styles[status] || 'bg-stone-100'}`}>
-      {status.charAt(0).toUpperCase() + status.slice(1)}
+    <span
+      className={`px-3 py-1 rounded-full text-sm font-medium ${styles[normalizedStatus] || 'bg-stone-100 text-stone-900'}`}
+      aria-label={`Status: ${label}`}
+    >
+      {label}
     </span>
   );
 }
