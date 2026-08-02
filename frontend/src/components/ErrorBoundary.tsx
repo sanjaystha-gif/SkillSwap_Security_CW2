@@ -39,6 +39,12 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
               </p>
               <div className="mt-4">
                 <p className="text-xs font-mono text-red-700">{this.state.error?.message}</p>
+                {this.state.error?.stack && (
+                  <details className="mt-3 rounded-2xl border border-red-200 bg-red-100 p-3 text-sm text-red-800">
+                    <summary className="cursor-pointer font-semibold">Show error details</summary>
+                    <pre className="mt-2 overflow-x-auto text-xs leading-5">{this.state.error.stack}</pre>
+                  </details>
+                )}
               </div>
               <button
                 type="button"
